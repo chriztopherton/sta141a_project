@@ -1,0 +1,53 @@
+---
+title: "STA141A_Final"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/christopherton/Documents/sta141_project/Data")
+getwd()
+library(astsa)
+#install.packages("ggbiplot")
+library(ggbiplot)
+```
+
+```{r}
+wine_red <- read.csv("winequality-red.csv",sep=";")
+wine_white <- read.csv("winequality-white.csv",sep=";")
+```
+
+```{r}
+red.pc <- princomp(wine_red,cor=T)
+# Showing the coefficients of the components:
+summary(red.pc,loadings=T)
+
+# Showing the eigenvalues of the correlation matrix:
+(red.pc$sdev)^2
+
+# A scree plot:
+
+plot(1:(length(red.pc$sdev)),  (red.pc$sdev)^2, type='b', 
+     main="Scree Plot", xlab="Number of Components", ylab="Eigenvalue Size")
+
+# Where does the "elbow" occur? 6
+# What seems to be a reasonable number of PCs to use?6
+```
+
+```{r}
+par(pty="s")
+biplot(red.pc)
+```
+
+```{r}
+red.pca <- prcomp(wine_red, center = TRUE, scale = TRUE)
+summary(red.pca)
+str(red.pca)
+
+ggbiplot(red.pca)
+```
+
+
+
