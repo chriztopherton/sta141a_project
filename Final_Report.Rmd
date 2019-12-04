@@ -1,0 +1,21 @@
+---
+title: "Final_Report"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(ggbiplot)
+library(MASS)
+library(ISLR)
+library(boot)
+library(class)
+library(caret)
+```
+
+
+
