@@ -1,9 +1,12 @@
 ---
-title: "Final_Report"
+title: "Sta141a Final Report"
 output: html_document
+
+date: "12/9/2019"
+
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE,echo=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggplot2)
@@ -18,4 +21,34 @@ library(caret)
 ```
 
 
+## Collaborators:
+  Grant Smith - ggsmith@ucdavis.edu
+  Christopher Ton - chrton@ucdavis.edu
 
+
+## Overview of the problem
+We aim to predict whether or not a Pima Indian Woman is diabetic or not based on her health characteristics such as pregnancy, glucose, blood pressure, skin, bmi, pedigree, and age. Additionally, we will elaborate on which biological features (i.e. glucose levels)  are best suited in correctly identifying diabetes in the subject group.  Throughout this analysis we will look at accuracy, sensitivity, and specificity. While we want all of these values to be high, some analysis will emphasize sensitivity over specificity. Due to the medical nature of the data we believe importance should be placed on correctly identifying an individual with the disease as correct and accurate diagnosis plays an important role in proper treatment of patients.
+
+## Data Analysis
+We first calculated summary statistics for the dataset in order to obtain a clearer picture of the variables we are working with. 
+
+
+
+# PCA
+```{r,echo=FALSE}
+pima <- data.frame(rbind(Pima.tr,Pima.te))
+pima.train <- pima[1:372,]
+pima.test <- pima[373:nrow(pima),]
+pima.pca <- prcomp(pima.train[,-8], center = TRUE,scale = TRUE)
+summary(pima.pca) # PCI explains 34%,PC2 explains 20%
+```
+## Logistic Regression
+## KNN
+## Random Forest
+
+
+
+
+### R Appendix
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
