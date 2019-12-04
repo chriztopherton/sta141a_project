@@ -32,6 +32,8 @@ We aim to predict whether or not a Pima Indian Woman is diabetic or not based on
 ## Data Analysis
 We first calculated summary statistics for the dataset in order to obtain a clearer picture of the variables we are working with. 
 
+TEST
+
 
 
 # PCA
