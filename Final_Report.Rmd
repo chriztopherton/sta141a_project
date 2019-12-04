@@ -45,6 +45,532 @@ summary(pima.pca) # PCI explains 34%,PC2 explains 20%
 ## Logistic Regression
 ## KNN
 ## Random Forest
+*(Data)**
+```{r}
+#install.packages('car')
+library(MASS)
+library(car)
+
+data("Pima.te")
+#training and test data (70:30) split
+Pim.N<-as.data.frame(rbind(Pima.te,Pima.tr))
+Pim.te<-as.data.frame(Pim.N[1:106,]);Pim.tr<-as.data.frame(Pim.N[107:nrow(Pim.N),])
+
+Pim.N2 <- Pim.N[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
+Pim.te2<-as.data.frame(Pim.N[1:106,]);Pim.tr2<-as.data.frame(Pim.N[107:nrow(Pim.N),])
+```
+
+## Summary Statistics
+```{r}
+summary(Pim.N)
+```
+
+```{r}
+
+pos.db<-subset(Pima.tr, type=='Yes')
+par(mfrow=c(2,4))
+for (i in c('glu','age','ped','bmi','npreg','skin','bp'))
+{
+  qqnorm(pos.db[[i]]);qqline(pos.db[[i]],col=2)
+}
+```
+
+
+```{r}
+pp.st<-numeric(0)
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+s.test<-shapiro.test(pos.db[[i]])
+pp.st[i]<-s.test$p.value
+}
+round(pp.st,4)
+```
+
+The shapiro wilks test confirms that only bp, bmi, and glu are normally distributed. (using 0.01 alpha)
+```{r}
+neg.db<-subset(Pima.tr, type=='No')
+
+par(mfrow=c(3,3))
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+qqnorm(neg.db[[i]]);qqline(neg.db[[i]],col=2)
+}
+
+
+#shapiro wilkes test for normality
+np.st<-numeric(0)
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+s.test<-shapiro.test(neg.db[[i]])
+np.st[i]<-s.test$p.value
+}
+round(np.st,3)
+```
+For the group negative for diabetes, we can see from the shapiro wilks test that skin, glu, age, ped, and npreg all violate the normality assumption. Only bp and bmi are normal. (using .01 alpha)
+
+## Conclusion from normality tests
+
+The only two variables that exhibit normality based on the shapiro wilks test for both yes and no diabetes groups are bp and bmi. Therefore we intend to focus on methods that do not rely on the assumption of normality. 
+
+## KNN
+
+KNN only requires that our data be from a random sample. Additionally we will standardize our dataset before carrying out our analysis. The data has been split with 70% of the data being alloted for training and the remaining 30% being used for testing. It is difficult to gain any inference from KNN so we will mostly be using it to confirm other methods conclusions regarding which variables are best for classifying diabetes. 
+
+```{r}
+#Standardize the varaibles being used
+pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
+pm.tr.sc<-data.frame(cbind(pm.tr.sc),Class=Pim.tr[,8])
+
+pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
+pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
+```
+
+**Full KNN**
+```{r}
+library(class)
+
+pm.knn12<-knn(pm.tr.sc[,-8],pm.ts.sc[,-8],pm.tr.sc[,8],k=16)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+Using Knn with all the available information we see that our accuracy, sesnsitive, and specificity are relatively good.
+
+Now we will experiment with dropping number of pregnancies to see if knn still performs as well. 
+
+**KNN drop npreg**
+```{r}
+pm.knn12<-knn(pm.tr.sc[,-c(8,1)],pm.ts.sc[,-c(8,1)],pm.tr.sc[,8],k=46)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+So dropping number of pregnancies decreased accuracy and sensitivity but we say specificity increase. (Pairing npreg with each variable showed different results that indicate pregnancy is not a good indicator for diabetes)
+
+**KNN with logical vars(bp,bmi,skin,glu)**
+```{r}
+pm.knn12<-knn(pm.tr.sc[,-c(8,1,7)],pm.ts.sc[,-c(8,1,7)],pm.tr.sc[,8],k=6)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+Dropping variables npreg and age we still get relatively good results as we did including all variables.
+
+**KNN with logical vars(bp,bmi,skin,age)**
+```{r}
+pm.knn12<-knn(pm.tr.sc[,-c(8,1,7,6)],pm.ts.sc[,-c(8,1,7,6)],pm.tr.sc[,8],k=23)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+**KNN with logical vars(glu,bp,ped,age)**
+```{r}
+names(pm.tr.sc)
+pm.knn12<-knn(pm.tr.sc[,-c(8,1,3,4)],pm.ts.sc[,-c(8,1,3,4)],pm.tr.sc[,8],k=102)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+**KNN with logical vars(glu,bp,ped,npreg)**
+```{r}
+names(pm.tr.sc)
+pm.knn12<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=3)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+```{r}
+names(pm.tr.sc)
+pm.knn12<-knn(pm.tr.sc[,c(1,2,4,5,7)],pm.ts.sc[,c(1,2,4,5,7)],pm.tr.sc[,8],k=9)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+**(Glucose and X-var)**
+```{r}
+#Visualize
+library(ggplot2)
+
+gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=4,size=3)
+```
+
+KNN using glucose and bmi
+```{r}
+library(class)
+
+pm.knn1<-knn(pm.tr.sc[,c(2,5)],pm.ts.sc[,c(2,5)],pm.tr.sc[,8],k=23)
+(pm.kn.cm1<-table(pm.knn1,pm.ts.sc$Class))
+sum(diag(pm.kn.cm1))/sum(pm.kn.cm1)
+pm.kn.cm1[4]/sum(pm.kn.cm1[,2]) #sensitivity
+pm.kn.cm1[1]/sum(pm.kn.cm1[,1]) #specificity
+```
+KNN with glu and ped
+```{r}
+pm.knn2<-knn(pm.tr.sc[,c(2,6)],pm.ts.sc[,c(2,6)],pm.tr.sc[,8],k=75)
+(pm.kn.cm2<-table(pm.knn2,pm.ts.sc$Class))
+sum(diag(pm.kn.cm2))/sum(pm.kn.cm2)
+pm.kn.cm2[4]/sum(pm.kn.cm2[,2]) #sensitivity
+pm.kn.cm2[1]/sum(pm.kn.cm2[,1]) #specificity
+```
+
+age and glu
+
+```{r}
+names(pm.tr.sc)
+pm.knn3<-knn(pm.tr.sc[,c(7,2)],pm.ts.sc[,c(7,2)],pm.tr.sc[,8],k=15)
+(pm.kn.cm3<-table(pm.knn3,pm.ts.sc$Class))
+sum(diag(pm.kn.cm3)/sum(pm.kn.cm3)) #accuracy
+pm.kn.cm3[4]/sum(pm.kn.cm3[,2]) #sensitivity
+pm.kn.cm3[1]/sum(pm.kn.cm3[,1]) #specificity
+```
+
+KNN glu and npreg
+```{r}
+ggplot(mapping=aes(x=glu,y=npreg)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+So far npreg and glucose have had the highest accuracy rating 78%
+```{r}
+names(pm.tr.sc)
+pm.knn4<-knn(pm.tr.sc[,c(1,2)],pm.ts.sc[,c(1,2)],pm.tr.sc[,8],k=15)
+(pm.kn.cm4<-table(pm.knn4,pm.ts.sc$Class))
+sum(diag(pm.kn.cm4)/sum(pm.kn.cm4)) #accuracy
+pm.kn.cm4[4]/sum(pm.kn.cm4[,2]) #sensitivity
+pm.kn.cm4[1]/sum(pm.kn.cm4[,1]) #specificity
+```
+**(Age and X-var)**
+
+age and bmi
+```{r}
+ggplot(mapping=aes(x=age,y=bmi)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+
+```{r}
+
+pm.knn5<-knn(pm.tr.sc[,c(7,3)],pm.ts.sc[,c(7,3)],pm.tr.sc[,8],k=47)
+(pm.kn.cm5<-table(pm.knn5,pm.ts.sc$Class))
+sum(diag(pm.kn.cm5)/sum(pm.kn.cm5))
+pm.kn.cm5[4]/sum(pm.kn.cm5[,2]) #sensitivity
+pm.kn.cm5[1]/sum(pm.kn.cm5[,1]) #specificity
+```
+
+age and ped
+```{r}
+ggplot(mapping=aes(x=age,y=ped)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+```{r}
+names(pm.tr.sc)
+pm.knn6<-knn(pm.tr.sc[,c(7,6)],pm.ts.sc[,c(7,6)],pm.tr.sc[,8],k=41)
+(pm.kn.cm6<-table(pm.knn6,pm.ts.sc$Class))
+sum(diag(pm.kn.cm6)/sum(pm.kn.cm6))
+pm.kn.cm6[4]/sum(pm.kn.cm6[,2]) #sensitivity
+pm.kn.cm6[1]/sum(pm.kn.cm6[,1]) #specificity
+```
+
+bmi/ped
+
+```{r}
+
+pm.knn5<-knn(pm.tr.sc[,c(7,3)],pm.ts.sc[,c(7,3)],pm.tr.sc[,8],k=47)
+(pm.kn.cm5<-table(pm.knn5,pm.ts.sc$Class))
+sum(diag(pm.kn.cm5)/sum(pm.kn.cm5))
+pm.kn.cm5[4]/sum(pm.kn.cm5[,2]) #sensitivity
+pm.kn.cm5[1]/sum(pm.kn.cm5[,1]) #specificity
+```
+
+
+
+age and ped
+
+```{r}
+library(ggplot2)
+ggplot(mapping=aes(x=bmi,y=ped)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+```{r}
+library(class)
+names(pm.tr.sc)
+pm.knn10<-knn(pm.tr.sc[,c(5,6)],pm.ts.sc[,c(5,6)],pm.tr.sc[,8],k=15)
+(pm.kn.cm10<-table(pm.knn10,pm.ts.sc$Class))
+sum(diag(pm.kn.cm10)/sum(pm.kn.cm10))
+pm.kn.cm10[4]/sum(pm.kn.cm10[,2]) #sensitivity
+pm.kn.cm10[1]/sum(pm.kn.cm10[,1]) #specificity
+```
+
+**(Npreg and X-var)**
+KNN npreg and bmi
+```{r}
+ggplot(mapping=aes(x=bmi,y=npreg)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+```{r}
+names(pm.tr.sc)
+pm.kn7<-knn(pm.tr.sc[,c(1,5)],pm.ts.sc[,c(1,5)],pm.tr.sc[,8],k=29)
+(pm.kn.cm7<-table(pm.kn7,pm.ts.sc$Class))
+sum(diag(pm.kn.cm7)/sum(pm.kn.cm7))
+pm.kn.cm7[4]/sum(pm.kn.cm7[,2]) #sensitivity
+pm.kn.cm7[1]/sum(pm.kn.cm7[,1]) #specificity
+```
+Initial analysis shows npreg and bmi achieve a 73% accuracy level with optimal k=29
+
+
+**npreg and ped**
+```{r}
+ggplot(mapping=aes(x=npreg,y=ped)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+
+```{r}
+pm.knn8<-knn(pm.tr.sc[,c(1,6)],pm.ts.sc[,c(1,6)],pm.tr.sc[,8],k=43)
+(pm.kn.cm8<-table(pm.knn8,pm.ts.sc$Class))
+sum(diag(pm.kn.cm8)/sum(pm.kn.cm8))
+pm.kn.cm8[4]/sum(pm.kn.cm8[,2]) #sensitivity
+pm.kn.cm8[1]/sum(pm.kn.cm8[,1]) #specificity
+```
+
+npreg and age
+```{r}
+ggplot(mapping=aes(x=npreg,y=age)) +
+	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
+	geom_point(data=pm.ts.sc,shape=2,size=3)
+```
+npreg and age
+```{r}
+pm.knn9<-knn(pm.tr.sc[,c(1,7)],pm.ts.sc[,c(1,7)],pm.tr.sc[,8],k=5)
+(pm.kn.cm9<-table(pm.knn9,pm.ts.sc$Class))
+sum(diag(pm.kn.cm9)/sum(pm.kn.cm9))
+pm.kn.cm9[4]/sum(pm.kn.cm9[,2]) #sensitivity
+pm.kn.cm9[1]/sum(pm.kn.cm9[,1]) #specificity
+```
+age and pregnancy have an accuray of about 76%
+
+**(Skin)**
+```{r}
+names(pm.tr.sc)
+pm.knn11<-knn(pm.tr.sc[,c(4,5)],pm.ts.sc[,c(4,5)],pm.tr.sc[,8],k=30)
+(pm.kn.cm11<-table(pm.knn11,pm.ts.sc$Class))
+sum(diag(pm.kn.cm11)/sum(pm.kn.cm11))
+pm.kn.cm11[4]/sum(pm.kn.cm11[,2]) #sensitivity
+pm.kn.cm11[1]/sum(pm.kn.cm11[,1]) #specificity
+```
+skin with ped
+```{r}
+pm.knn11<-knn(pm.tr.sc[,c(4,6)],pm.ts.sc[,c(4,6)],pm.tr.sc[,8],k=12)
+(pm.kn.cm11<-table(pm.knn11,pm.ts.sc$Class))
+sum(diag(pm.kn.cm11)/sum(pm.kn.cm11))
+pm.kn.cm11[4]/sum(pm.kn.cm11[,2]) #sensitivity
+pm.kn.cm11[1]/sum(pm.kn.cm11[,1]) #specificity
+```
+**Bp and all its friends**
+bp with npreg
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,1)],pm.ts.sc[,c(3,1)],pm.tr.sc[,8],k=22)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+bp with glu
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,2)],pm.ts.sc[,c(3,2)],pm.tr.sc[,8],k=20)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+bp with skin
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,4)],pm.ts.sc[,c(3,4)],pm.tr.sc[,8],k=46)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+bp with bmi
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,5)],pm.ts.sc[,c(3,5)],pm.tr.sc[,8],k=14)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+pm.kn.cm12[4]
+```
+bp with ped
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,6)],pm.ts.sc[,c(3,6)],pm.tr.sc[,8],k=20)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+bp and age
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(3,7)],pm.ts.sc[,c(3,7)],pm.tr.sc[,8],k=62)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+**skin and everything**
+
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(4,1)],pm.ts.sc[,c(4,1)],pm.tr.sc[,8],k=20)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(4,2)],pm.ts.sc[,c(4,2)],pm.tr.sc[,8],k=56)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(4,5)],pm.ts.sc[,c(4,5)],pm.tr.sc[,8],k=34)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(4,6)],pm.ts.sc[,c(4,6)],pm.tr.sc[,8],k=12)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+```{r}
+pm.knn12<-knn(pm.tr.sc[,c(4,7)],pm.ts.sc[,c(4,7)],pm.tr.sc[,8],k=100)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+```
+
+Optimization of K
+```{r}
+#K optimizer
+#cv.error<-numeric(0)
+#t<-1
+#for (i in 1:200){
+  
+#pm.knnK<-knn(pm.tr.sc2[,c(1,2,4,5,6)],pm.ts.sc2[,c(1,2,4,5,6)],pm.tr.sc[,8],k=t)
+#pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
+#cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
+
+#t<-t+1
+#}
+#cv.error<-matrix(cv.error)
+
+#max(cv.error)
+
+#(k.opt<-which.max(cv.error))
+```
+
+
+
+```{r}
+#install.packages('e1071', dependencies=TRUE)
+library(e1071)
+```
+
+
+## Support Vector Machine
+
+Suppoert Vector Machine will be used sparingly to help confirm if variables determined as important for classification work using other methods. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
+
+```{r}
+#svm full model  
+svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
+summary(svm.md)
+
+```
+
+```{r}
+#Svm full model prediction
+svm.pr<-predict(svm.md,pm.ts.sc[,-8])
+
+(svm.cm<-table(svm.pr,pm.ts.sc[,8]))
+res.sv1<-cbind(sum(diag(svm.cm))/sum(svm.cm),
+svm.cm[4]/sum(svm.cm[,2]), #sensitivity
+svm.cm[1]/sum(svm.cm[,1])) #specificity
+colnames(res.sv1)<-c('Accuracy','Sensitivity','Specificity');res.sv1
+```
+
+
+```{r}
+svm.md2<-svm(Class~glu+skin+bmi+age+ped,pm.tr.sc,type="C-classification",kernel='linear')
+svm.pr2<-predict(svm.md2,pm.ts.sc[,c(2,4,5,6,7)])
+
+(svm.cm2<-table(svm.pr2,pm.ts.sc[,8]))
+res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
+svm.cm2[4]/sum(svm.cm2[,2]), #sensitivity
+svm.cm2[1]/sum(svm.cm2[,1])) #specificity
+
+colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
+```
+
+```{r}
+names(pm.tr.sc)
+svm.md3<-svm(Class~glu+bmi+age+ped,pm.tr.sc,type="C-classification",kernel='linear')
+svm.pr3<-predict(svm.md3,pm.ts.sc[,c(2,5,6,7)])
+
+(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
+res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),#accuracy
+svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
+svm.cm3[1]/sum(svm.cm3[,1])) #specificity
+colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
+```
+Dropping skin didn't have any effect on the model. 
+```{r}
+#K optimizer CV method
+#install.packages('caret')
+#library(caret)
+
+#names(pm.tr.sc)
+
+#model1<-train(Class~.,data=pm.tr.sc,method='knn',
+ #             tuneGrid=expand.grid(.k=1:100),
+  #            metric='Accuracy',
+   #           trControl=trainControl(
+    #            method = 'repeatedcv',
+     #           number = 10,
+      #          repeats = 15))
+#model1$bestTune
 
 
 
