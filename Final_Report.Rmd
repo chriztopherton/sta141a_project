@@ -54,15 +54,13 @@ library(MASS)
 library(car)
 
 data("Pima.te")
+
 #training and test data (70:30) split
 Pim.N<-as.data.frame(rbind(Pima.te,Pima.tr))
 Pim.te<-as.data.frame(Pim.N[1:106,]);Pim.tr<-as.data.frame(Pim.N[107:nrow(Pim.N),])
-
-Pim.N2 <- Pim.N[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
-Pim.te2<-as.data.frame(Pim.N[1:106,]);Pim.tr2<-as.data.frame(Pim.N[107:nrow(Pim.N),])
 ```
 
-## Summary Statistics
+**(Summary Statistics)**
 ```{r}
 summary(Pim.N)
 ```
