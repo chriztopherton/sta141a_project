@@ -153,6 +153,7 @@ pm.kn.cm[1]/sum(pm.kn.cm[,1])
 
 
 pw.knn(1,2,23)
+#test
 ```
 
 
