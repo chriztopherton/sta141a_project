@@ -127,6 +127,38 @@ pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
 pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
 ```
 
+
+## Pairwise KNN function
+
+```{r}
+pw.knn<-function(x,y,z) ##need to get it to print confusion matrix too
+{
+pm.knn<-knn(pm.tr.sc[,c(x,y)],pm.ts.sc[,c(x,y)],pm.tr.sc[,8],k=z)
+
+pm.kn.cm<-table(pm.knn,pm.ts.sc$Class)
+
+ac<-sum(diag(pm.kn.cm)/sum(pm.kn.cm))
+se<-pm.kn.cm[4]/sum(pm.kn.cm[,2])
+sp<-pm.kn.cm[1]/sum(pm.kn.cm[,1])
+pw.knn.res<-cbind(ac,se,sp)
+colnames(pw.knn.res)<-c('accuracy','sensitivity','specificity')
+return(pw.knn.res)
+}
+
+pm.knn<-knn(pm.tr.sc[,c(1,2)],pm.ts.sc[,c(1,2)],pm.tr.sc[,8],k=23)
+
+pm.kn.cm<-table(pm.knn,pm.ts.sc$Class)
+
+sum(diag(pm.kn.cm)/sum(pm.kn.cm))
+pm.kn.cm[4]/sum(pm.kn.cm[,2])
+pm.kn.cm[1]/sum(pm.kn.cm[,1])
+
+
+pw.knn(1,2,23)
+```
+
+
+
 **Full KNN**
 ```{r}
 library(class)
@@ -483,6 +515,8 @@ pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
 pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
 ```
 
+
+
 Optimization of K
 ```{r}
 #K optimizer
@@ -573,6 +607,8 @@ Dropping skin didn't have any effect on the model.
      #           number = 10,
       #          repeats = 15))
 #model1$bestTune
+
+```
 
 
 
