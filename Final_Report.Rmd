@@ -57,7 +57,11 @@ data("Pima.te")
 
 #training and test data (70:30) split
 Pim.N<-as.data.frame(rbind(Pima.te,Pima.tr))
-Pim.te<-as.data.frame(Pim.N[1:106,]);Pim.tr<-as.data.frame(Pim.N[107:nrow(Pim.N),])
+trng = sample(1:532, 362, replace=FALSE)
+test.g<- setdiff(1:532,trng)
+
+Pim.tr<-Pim.N[trng,]
+Pim.te<-Pim.N[test.g,]
 ```
 
 **(Summary Statistics)**
