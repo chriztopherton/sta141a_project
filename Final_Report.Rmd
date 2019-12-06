@@ -54,7 +54,7 @@ pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
 pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
 ```
 
-```
+
 
 **Summary Statistics**
 
