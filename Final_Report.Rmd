@@ -19,6 +19,7 @@ library(boot)
 library(class)
 library(caret)
 library(randomForest)
+library(car)
 ```
 
 
@@ -35,10 +36,6 @@ We first calculated summary statistics for the dataset in order to obtain a clea
 
 **(Data)**
 ```{r,echo=FALSE,warning=FALSE}
-#install.packages('car')
-library(MASS)
-library(car)
-
 data("Pima.te")
 
 #training and test data (70:30) split
