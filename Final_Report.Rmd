@@ -113,7 +113,7 @@ qqnorm(neg.db[[i]]);qqline(neg.db[[i]],col=2)
 ```
 
 
-```{r}
+```{r,echo=FALSE}
 #shapiro wilkes test for normality
 np.st<-numeric(0)
 for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
@@ -523,13 +523,9 @@ plot(x, type="simple")
 *Is there a relationship between diabetes and pregnancy?*
 
 
-<<<<<<< HEAD
-```{r}
-=======
 ##
 
 ```{r,echo=FALSE}
->>>>>>> 874dbb7394114a915a1cb48d6e993b21e3ea997a
 library(MASS)
 
 pima <-rbind(Pima.tr,Pima.te)
@@ -611,6 +607,22 @@ q2_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
 
 q2_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
 ```
+**Question 3:**
+*How does pedigree effect pregnant women and diabetes?*
+
+```{r}
+fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
+
+summ <- summary(fit1)
+summ
+coeff<-data.frame(summ$coefficients)
+(odds.inc <- round(exp(coeff$Estimate), 4) )
+CI <- round(exp(confint(fit1,level = .95)),4)
+CI
+
+```
+
+
 
 ### R Appendix
 ```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
