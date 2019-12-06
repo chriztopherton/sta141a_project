@@ -279,38 +279,62 @@ gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
 ```
 
 
-```{r}
-#install.packages('e1071', dependencies=TRUE)
-library(e1071)
-```
 
 
 ## Support Vector Machine
 
-Suppoert Vector Machine will be used sparingly to help confirm if variables determined as important for classification work using other methods. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
+Suppoert Vector Machine will be used to help confirm which variables are as important for classification. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
+
 
 ```{r}
-#svm full model  
+#install.packages('e1071', dependencies=TRUE)
+#install.packages('kernlab')
+library(e1071)
+library(kernlab)
+library(caret)
+```
+
+```{r}
+
+#svm full model 
+names(pm.tr.sc)
+
+lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
+
+summary(lin.tn)
+
 svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
 summary(svm.md)
+```
+**pick model**
+```{r}
+svm.ln.best<-lin.tn$best.model
+tn.ts<-predict(svm.ln.best,newdata=pm.tr.sc)
+(svm.tn.cm<-table(tn.ts,pm.tr.sc$Class))
 
+ln.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svm.tn.cm[4]/sum(svm.tn.cm[,2]), #sensitivity
+svm.tn.cm[1]/sum(svm.tn.cm[,1])) #specificity
+colnames(ln.res)<-c('Accuracy','Sensitivity','Specificity');res.sv3
 ```
 
+**select features**
 ```{r}
-#Svm full model prediction
-svm.pr<-predict(svm.md,pm.ts.sc[,-8])
+set.seed(2)
 
-(svm.cm<-table(svm.pr,pm.ts.sc[,8]))
-res.sv1<-cbind(sum(diag(svm.cm))/sum(svm.cm),
-svm.cm[4]/sum(svm.cm[,2]), #sensitivity
-svm.cm[1]/sum(svm.cm[,1])) #specificity
-colnames(res.sv1)<-c('Accuracy','Sensitivity','Specificity');res.sv1
+feat<-rfeControl(functions=lrFuncs, method="cv", number=10)
+
+svm.feat <- rfe(pm.tr.sc[,1:7], pm.tr.sc[,8],sizes = c(8, 7, 6, 5, 4),
+              rfeControl = feat, method = "svmLinear")
+
+svm.feat
 ```
 
-
+**SVM with selected features**
 ```{r}
-svm.md2<-svm(Class~glu+skin+bmi+age+ped,pm.tr.sc,type="C-classification",kernel='linear')
-svm.pr2<-predict(svm.md2,pm.ts.sc[,c(2,4,5,6,7)])
+names(pm.tr.sc)
+svm.md2<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='linear')
+svm.pr2<-predict(svm.md2,pm.ts.sc[,c(1,2,5,6)])
 
 (svm.cm2<-table(svm.pr2,pm.ts.sc[,8]))
 res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
@@ -320,18 +344,9 @@ svm.cm2[1]/sum(svm.cm2[,1])) #specificity
 colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
 ```
 
-```{r}
-names(pm.tr.sc)
-svm.md3<-svm(Class~glu+bmi+age+ped,pm.tr.sc,type="C-classification",kernel='linear')
-svm.pr3<-predict(svm.md3,pm.ts.sc[,c(2,5,6,7)])
+Svm concludes that the best features to use are glu,bmi,ped, and npreg.
 
-(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
-res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),#accuracy
-svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
-svm.cm3[1]/sum(svm.cm3[,1])) #specificity
-colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
-```
-Dropping skin didn't have any effect on the model. 
+
 
 
 ### R Appendix
