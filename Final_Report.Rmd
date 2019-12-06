@@ -50,26 +50,25 @@ Pim.tr<-Pim.N[trng,]
 Pim.te<-Pim.N[test.g,]
 ```
 
-**(Summary Statistics)**
+**Summary Statistics**
+
+The data set we are using comes from the package 'mass' and consists of the variables npreg, glu, bp, skin, bmi, ped, and age. Type/Class is a binary variable indicating whether a subject has or does not have diabetes. In our original proposal the variable 'insulin' was to be included in the dataset, however due to the high number of missing values we chose to drop this variable from the project. 
+
 ```{r,echo=FALSE}
 summary(Pim.N)
 ```
 
-# PCA
-```{r,echo=FALSE}
-pima.pca <- prcomp(Pim.tr[,-8], center = TRUE,scale = TRUE)
-summary(pima.pca) # PCI explains 34%,PC2 explains 20%
-
-#cor(pima[,-8])
-
-```
-
-We considered reducing the dimensions of our data by finding candidate variables contributing in direction of the most variance, thus ignoring any of the unnecessary noise in our data. Particularly, we wished to maximize the amount of information along these directions, or namely, the eigenvectors of our dimensions. PC1,PC2,PC3,PC4,PC5 collectively describe at least 90% of the variance. However, due to the lack of high correlation among the variables, PCA fails to determine the minimal number of components to account for the variability and thus, most, if not all, of the predictors may be necessary for the determination of diabetes.
+Additionally, we split our data set into training and test sets with a ratio of 70:30. The training set consists of 372 observations and the test set consists of 160 observations. 
 
 
-An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. 
+## Data Analysis
 
-# Testing for Normality
+**Assumptions**
+
+Normality Results: 
+
+Initial qq plots for the key variables indicated that normality violations would be an issue regarding this dataset. The plots below for example represent glu, age, ped, and bmi
+
 ```{r,echo=FALSE}
 
 pos.db<-subset(Pima.tr, type=='Yes')
@@ -113,9 +112,25 @@ round(np.st,3)
 ```
 For the group negative for diabetes, we can see from the shapiro wilks test that skin, glu, age, ped, and npreg all violate the normality assumption. Only bp and bmi are normal. (using .01 alpha)
 
-## Conclusion from normality tests
+**Conclusion from normality tests**
 
 The only two variables that exhibit normality based on the shapiro wilks test for both yes and no diabetes groups are bp and bmi. Therefore we intend to focus on methods that do not rely on the assumption of normality. 
+
+# PCA
+```{r,echo=FALSE}
+pima.pca <- prcomp(Pim.tr[,-8], center = TRUE,scale = TRUE)
+summary(pima.pca) # PCI explains 34%,PC2 explains 20%
+
+#cor(pima[,-8])
+
+```
+
+We considered reducing the dimensions of our data by finding candidate variables contributing in direction of the most variance, thus ignoring any of the unnecessary noise in our data. Particularly, we wished to maximize the amount of information along these directions, or namely, the eigenvectors of our dimensions. PC1,PC2,PC3,PC4,PC5 collectively describe at least 90% of the variance. However, due to the lack of high correlation among the variables, PCA fails to determine the minimal number of components to account for the variability and thus, most, if not all, of the predictors may be necessary for the determination of diabetes.
+
+
+An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. 
+
+
 
 ## KNN
 
