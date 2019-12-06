@@ -18,6 +18,7 @@ library(ISLR)
 library(boot)
 library(class)
 library(caret)
+library(randomForest)
 ```
 
 
@@ -33,7 +34,7 @@ We aim to predict whether or not a Pima Indian Woman is diabetic or not based on
 We first calculated summary statistics for the dataset in order to obtain a clearer picture of the variables we are working with. 
 
 **(Data)**
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 #install.packages('car')
 library(MASS)
 library(car)
@@ -435,7 +436,7 @@ varImpPlot(rf)
 ** Illustration of Decision Tree **
 ```{r,fig.height=4}
 require(rpart)
-fit <- rpart(pima.train$type ~.,pima.train[,-8])
+fit <- rpart(s.ptr$type ~.,s.ptr[,-8])
 plot(fit)
 text(fit)
 #test
