@@ -144,6 +144,143 @@ We considered reducing the dimensions of our data by finding candidate variables
 An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. As the above results show, our data does not meet the assumption of normality. 
 
 
+
+**Question 1:**
+*What is the best combination of variables in predicting diabetes in Pima Indians?*
+
+An intial method we utilized was SVM for determining which variables are best suited to determine Diabetes. The full svm model was calculted and then tuned to increase performance.
+
+The initial model gave the following results:
+
+```{r}
+#install.packages('e1071', dependencies=TRUE)
+#install.packages('kernlab')
+library(e1071)
+library(kernlab)
+library(caret)
+```
+
+```{r, echo=FALSE}
+
+#svm full model
+#>>>>>>> a069b6d0479eefafb5ea061973707b23cfb9c562
+
+svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
+#summary(svm.md)
+
+svm.fullpr<-predict(svm.md,pm.ts.sc)
+svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
+
+svmfm.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svm.fm[4]/sum(svm.fm[,2]), #sensitivity
+svm.fm[1]/sum(svm.fm[,1])) #specificity
+colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
+list(svm.fm,svmfm.res)
+```
+
+Tuning the model in order to further optomize the results yieled a model with a cost  of 0.1, however; the results did not improve the model.
+```{r}
+#svm full model 
+lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
+
+summary(lin.tn)
+
+```
+
+```{r,echo=FALSE}
+#pick model
+svm.ln.best<-lin.tn$best.model
+
+tn.ts<-predict(svm.ln.best,newdata=pm.ts.sc)
+svm.tn.cm<-table(tn.ts,pm.ts.sc$Class)
+
+ln.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svm.tn.cm[4]/sum(svm.tn.cm[,2]), #sensitivity
+svm.tn.cm[1]/sum(svm.tn.cm[,1])) #specificity
+colnames(ln.res)<-c('Accuracy','Sensitivity','Specificity')
+list(svm.tn.cm,ln.res)
+```
+
+**select features**
+```{r,echo=FALSE}
+set.seed(2)
+
+feat<-rfeControl(functions=lrFuncs, method="cv", number=10)
+
+svm.feat <- rfe(pm.tr.sc[,1:7], pm.tr.sc[,8],sizes = c(7, 6, 5, 4),
+              rfeControl = feat, method = "svmLinear")
+
+svm.feat
+plot(svm.feat)
+```
+
+**SVM with selected features**
+```{r,echo=FALSE}
+
+svm.md2<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='linear')
+svm.pr2<-predict(svm.md2,pm.ts.sc[,c(1,2,5,6)])
+
+(svm.cm2<-table(svm.pr2,pm.ts.sc[,8]))
+res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
+svm.cm2[4]/sum(svm.cm2[,2]), #sensitivity
+svm.cm2[1]/sum(svm.cm2[,1])) #specificity
+
+colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
+```
+
+Svm concludes that the best features to use are glu,bmi,ped, and npreg.
+
+Even with the best features used in the svm model, we saw little performance increase. The next step we took was to attemp to use different kernal's to see if results improved.
+
+**Change Kernal**
+
+Using the full model we only saw specificity increase slightly but accuracy and sensitivity did not improve.
+```{r,echo=FALSE}
+svm.md4<-svm(Class~.,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr4<-predict(svm.md4,pm.ts.sc[,-8])
+
+(svm.cm4<-table(svm.pr4,pm.ts.sc[,8]))
+res.sv4<-cbind(sum(diag(svm.cm4))/sum(svm.cm4),
+svm.cm4[4]/sum(svm.cm4[,2]), #sensitivity
+svm.cm4[1]/sum(svm.cm4[,1])) #specificity
+
+colnames(res.sv4)<-c('Accuracy','Sensitivity','Specificity');res.sv4
+```
+
+-radial kernal improved the reduced svm model
+```{r,echo=FALSE}
+svm.md3<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr3<-predict(svm.md3,pm.ts.sc[,c(1,2,5,6)])
+
+(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
+res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),
+svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
+svm.cm3[1]/sum(svm.cm3[,1])) #specificity
+
+colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
+```
+
+Once we applied the kernal change to radial for the reduced model using only the selected features, we saw accuracy and specificty both improve.
+
+```{r,echo=FALSE}
+svm.mats<-list(svm.cm,svm.cm2,svm.cm4,svm.cm3)
+svm.results<-list(res.sv1,res.sv2,res.sv4,res.sv3)
+theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+names(svm.results)<-theSVM
+names(svm.mats)<-theSVM2
+# svm.results$`Full Linear`<-list(res.sv1,svm.cm)
+# svm.results$`Reduced Linear`<-list(res.sv2,svm.cm2)
+# svm.results$`Full Radial`<-list(res.sv4,svm.cm4)
+# svm.results$`Reduced Radial`<-list(res.sv3,svm.cm3)
+
+svm.mats
+svm.results
+```
+
+
+
+
 ## KNN
 
 ```{r,echo=FALSE}
@@ -312,127 +449,9 @@ gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
 Suppoert Vector Machine will be used to help confirm which variables are as important for classification. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
 
 
-```{r}
-#install.packages('e1071', dependencies=TRUE)
-#install.packages('kernlab')
-library(e1071)
-library(kernlab)
-library(caret)
-```
-
-```{r}
-#svm full model
-#>>>>>>> a069b6d0479eefafb5ea061973707b23cfb9c562
-
-svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
-summary(svm.md)
-
-svm.fullpr<-predict(svm.md,pm.ts.sc)
-svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
-
-svmfm.res<-cbind(sum(diag(svm.fm))/sum(svm.fm),#accuracy
-svm.fm[4]/sum(svm.fm[,2]), #sensitivity
-svm.fm[1]/sum(svm.fm[,1])) #specificity
-colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
-```
-
-
-```{r,echo=FALSE}
-
-#svm full model tune
-
-
-lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
-
-summary(lin.tn)
-
-svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
-summary(svm.md)
-```
-**pick model**
-```{r,echo=FALSE}
-svm.ln.best<-lin.tn$best.model
-tn.ts<-predict(svm.ln.best,newdata=pm.tr.sc)
-(svm.tn.cm<-table(tn.ts,pm.tr.sc$Class))
-
-ln.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
-svm.tn.cm[4]/sum(svm.tn.cm[,2]), #sensitivity
-svm.tn.cm[1]/sum(svm.tn.cm[,1])) #specificity
-colnames(ln.res)<-c('Accuracy','Sensitivity','Specificity');ln.res
-```
-
-**select features**
-```{r,echo=FALSE}
-set.seed(2)
-
-feat<-rfeControl(functions=lrFuncs, method="cv", number=10)
-
-svm.feat <- rfe(pm.tr.sc[,1:7], pm.tr.sc[,8],sizes = c(8, 7, 6, 5, 4),
-              rfeControl = feat, method = "svmLinear")
-
-svm.feat
-```
-
-**SVM with selected features**
-```{r,echo=FALSE}
-names(pm.tr.sc)
-svm.md2<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='linear')
-svm.pr2<-predict(svm.md2,pm.ts.sc[,c(1,2,5,6)])
-
-(svm.cm2<-table(svm.pr2,pm.ts.sc[,8]))
-res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
-svm.cm2[4]/sum(svm.cm2[,2]), #sensitivity
-svm.cm2[1]/sum(svm.cm2[,1])) #specificity
-
-colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
-```
-
-Svm concludes that the best features to use are glu,bmi,ped, and npreg.
-
-**Change Kernal**
--did not improve full model
-```{r,echo=FALSE}
-svm.md4<-svm(Class~.,pm.tr.sc,type="C-classification",kernel='radial')
-svm.pr4<-predict(svm.md4,pm.ts.sc[,-8])
-
-(svm.cm4<-table(svm.pr4,pm.ts.sc[,8]))
-res.sv4<-cbind(sum(diag(svm.cm4))/sum(svm.cm4),
-svm.cm4[4]/sum(svm.cm4[,2]), #sensitivity
-svm.cm4[1]/sum(svm.cm4[,1])) #specificity
-
-colnames(res.sv4)<-c('Accuracy','Sensitivity','Specificity');res.sv4
-```
 
 
 
--radial kernal improved the reduced svm model
-```{r,echo=FALSE}
-svm.md3<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='radial')
-svm.pr3<-predict(svm.md3,pm.ts.sc[,c(1,2,5,6)])
-
-(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
-res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),
-svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
-svm.cm3[1]/sum(svm.cm3[,1])) #specificity
-
-colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
-```
-
-```{r,echo=FALSE}
-svm.mats<-list(svm.fm,svm.cm2,svm.cm4,svm.cm3)
-svm.results<-list(svmfm.res,res.sv2,res.sv4,res.sv3)
-theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
-theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
-names(svm.results)<-theSVM
-names(svm.mats)<-theSVM2
-# svm.results$`Full Linear`<-list(res.sv1,svm.cm)
-# svm.results$`Reduced Linear`<-list(res.sv2,svm.cm2)
-# svm.results$`Full Radial`<-list(res.sv4,svm.cm4)
-# svm.results$`Reduced Radial`<-list(res.sv3,svm.cm3)
-
-svm.mats
-svm.results
-```
 
 ## Random Forest
 
