@@ -292,74 +292,9 @@ svm.results
 
 ## KNN
 
-## Pairwise KNN function
-
-```{r,echo=FALSE}
-
-#used to get all pw results. With k optimizer used to find k that would give highest accuracy
-
-pw.knn<-function(x,y,z) 
-{
-pm.knn<-knn(pm.tr.sc[,c(x,y)],pm.ts.sc[,c(x,y)],pm.tr.sc[,8],k=z)
-
-pm.kn.cm<-table(pm.knn,pm.ts.sc$Class)
-ac<-sum(diag(pm.kn.cm)/sum(pm.kn.cm))
-se<-pm.kn.cm[4]/sum(pm.kn.cm[,2])
-sp<-pm.kn.cm[1]/sum(pm.kn.cm[,1])
-pw.knn.res<-cbind(ac,se,sp)
-colnames(pw.knn.res)<-c('accuracy','sensitivity','specificity')
-return(list(pm.kn.cm,pw.knn.res))
-}
-
-pw.knn(1,2,23)
-#test
-```
-
-```{r,echo=FALSE}
-#K optimizer CV method
-# install.packages('caret')
-# library(caret)
-# 
-# names(pm.tr.sc)
-# 
-# model1<-train(Class~.,data=pm.tr.sc,method='knn',
-#               tuneGrid=expand.grid(.k=1:100),
-#               metric='Accuracy',
-#               trControl=trainControl(
-#                 method = 'repeatedcv',
-#                 number = 10,
-#                 repeats = 15))
-# model1$bestTune# 
-
-```
-
-
-```{r,echo=FALSE}
-#K accuracy optimizer
-
-k.opt<-function(x,y)
-{
-cv.error<-numeric(0)
-t<-1
-for (i in 1:200){
-  
-pm.knnK<-knn(pm.tr.sc[,c(x,y)],pm.ts.sc[,c(x,y)],pm.tr.sc[,8],k=t)
-pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
-cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
-
-t<-t+1
-}
-cv.error<-matrix(cv.error)
-cv.error.max<-max(cv.error)
-k.optm<-which.max(cv.error)
-
-return(c(cv.error.max,k.optm))
-}
-
-k.opt(1,2)
-
-```
 **Full KNN**
+
+Using Knn with all variables yields the following results which perform similarly to SVM.
 ```{r,echo=FALSE}
 library(class)
 
@@ -369,76 +304,51 @@ sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
 pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
 pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
 ```
-Using Knn with all the available information we see that our accuracy, sesnsitive, and specificity are relatively good.
-
-Now we will experiment with dropping number of pregnancies to see if knn still performs as well. 
-
-**KNN drop npreg**
-```{r,echo=FALSE}
-pm.knn12<-knn(pm.tr.sc[,-c(8,1)],pm.ts.sc[,-c(8,1)],pm.tr.sc[,8],k=46)
-(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
-sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
-pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
-pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
-```
-So dropping number of pregnancies decreased accuracy and sensitivity but we say specificity increase. (Pairing npreg with each variable showed different results that indicate pregnancy is not a good indicator for diabetes)
-
-**KNN with logical vars(bp,bmi,skin,glu)**
-```{r,echo=FALSE}
-pm.knn12<-knn(pm.tr.sc[,-c(8,1,7)],pm.ts.sc[,-c(8,1,7)],pm.tr.sc[,8],k=6)
-(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
-sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
-pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
-pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
-```
-Dropping variables npreg and age we still get relatively good results as we did including all variables.
-
-**KNN with logical vars(bp,bmi,skin,age)**
-```{r,echo=FALSE}
-pm.knn12<-knn(pm.tr.sc[,-c(8,1,7,6)],pm.ts.sc[,-c(8,1,7,6)],pm.tr.sc[,8],k=23)
-(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
-sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
-pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
-pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
-```
 
 **KNN with logical vars(glu,bp,ped,age)**
+Using knn with the selected variables from SVM showed performed higher than 
+
 ```{r,echo=FALSE}
 names(pm.tr.sc)
-pm.knn12<-knn(pm.tr.sc[,-c(8,1,3,4)],pm.ts.sc[,-c(8,1,3,4)],pm.tr.sc[,8],k=102)
-(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
-sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
-pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
-pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
-```
-**KNN with logical vars(glu,bp,ped,npreg)**
-```{r,echo=FALSE}
-names(pm.tr.sc)
-pm.knn12<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=3)
+pm.knn12<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=7)
 (pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
 sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
 pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
 pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
 ```
 
+
 ```{r,echo=FALSE}
+#K optimizer CV method
 names(pm.tr.sc)
-pm.knn12<-knn(pm.tr.sc[,c(1,2,4,5,7)],pm.ts.sc[,c(1,2,4,5,7)],pm.tr.sc[,8],k=9)
-(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
-sum(diag(pm.kn.cm12)/sum(pm.kn.cm12))
-pm.kn.cm12[4]/sum(pm.kn.cm12[,2]) #sensitivity
-pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
+
+model1<-train(Class~glu+ped+npreg+bmi,data=pm.tr.sc,method='knn',
+              tuneGrid=expand.grid(.k=1:10),
+              metric='Accuracy',
+              trControl=trainControl(
+                method = 'repeatedcv',
+                number = 10,
+                repeats = 15))
+model1$bestTune#
+
 ```
 
-**(Glucose and X-var)**
-```{r,echo=FALSE}
-#Visualize
-library(ggplot2)
+```{r}
+cv.error<-numeric(0)
+t<-1
+for (i in 1:200){
+  
+pm.knnK<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=t)
+pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
+cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
 
-gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
-	geom_point(data=pm.tr.sc,mapping=aes(colour=Class),size=3) +
-	geom_point(data=pm.ts.sc,shape=4,size=3)
+t<-t+1
+}
+cv.error<-matrix(cv.error)
+cv.error.max<-max(cv.error)
+(k.optm<-which.max(cv.error))
 ```
+
 
 ## Random Forest
 
