@@ -442,7 +442,7 @@ gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
 
 ## Random Forest
 
-```{r}
+```{r,echo=FALSE}
 set.seed(1234)
 s.ptr <- data.frame(cbind(scale(Pim.tr[-8],center=TRUE)),Pim.tr[8])
 s.pte <- data.frame(cbind(scale(Pim.te[-8],center=TRUE)),Pim.te[8])
@@ -473,7 +473,7 @@ varImpPlot(rf)
 ```
 
 ** Illustration of Decision Tree **
-```{r,fig.height=4}
+```{r,fig.height=4,echo=FALSE}
 require(rpart)
 fit <- rpart(s.ptr$type ~.,s.ptr[,-8])
 plot(fit)
@@ -525,7 +525,7 @@ plot(x, type="simple")
 
 ##
 
-```{r}
+```{r,echo=FALSE}
 library(MASS)
 
 pima <-rbind(Pima.tr,Pima.te)
