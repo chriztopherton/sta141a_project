@@ -523,8 +523,6 @@ plot(x, type="simple")
 *Is there a relationship between diabetes and pregnancy?*
 
 
-##
-
 ```{r}
 library(MASS)
 
