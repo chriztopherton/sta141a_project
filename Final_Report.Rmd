@@ -1,9 +1,9 @@
 ---
 title: "Sta141a Final Report"
-output: html_document
-
+output:
+  pdf_document: default
+  html_document: default
 date: "12/9/2019"
-
 ---
 
 ```{r setup, include=FALSE,echo=TRUE}
@@ -25,6 +25,7 @@ library(car)
 library(e1071)
 library(kernlab)
 library(caret)
+library(pROC)
 ```
 
 
@@ -439,11 +440,6 @@ gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
 	geom_point(data=pm.ts.sc,shape=4,size=3)
 ```
 
-
-## Support Vector Machine
-
-Suppoert Vector Machine will be used to help confirm which variables are as important for classification. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
-
 ## Random Forest
 
 ```{r}
@@ -483,6 +479,133 @@ fit <- rpart(s.ptr$type ~.,s.ptr[,-8])
 plot(fit)
 text(fit)
 #test
+```
+```{r}
+#library(GGally)
+library(MASS)
+library(randomForest)
+#ggpairs(pima[c("npreg","glu","bp","skin","bmi","ped","age")])
+pima <-rbind(Pima.tr,Pima.te)
+pima <- pima[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
+train.ind = sample(1:517, 362, replace=FALSE)
+test.ind = setdiff(1:517, train.ind)
+
+pima.train <- pima[train.ind,]
+pima.test <- pima[test.ind,]
+
+rf.train.1 = pima.train[c("age","glu","ped","bmi")]
+rf.label = as.factor(pima.train$type)
+
+rf.1 = randomForest(x = rf.train.1, y = rf.label, importance = TRUE, ntree =2000)
+rf.1.pred = predict(rf.1, pima.test)
+
+rf.1
+
+cm = table(rf.1.pred,pima.test$type)
+sum(diag(cm))/sum(cm)
+confusionMatrix(rf.1.pred,pima.test$type)
+
+varImpPlot(rf.1)
+
+
+library(party)
+x <- ctree(type ~ glu  + bmi + ped + age + npreg  , data=pima.train)
+plot(x, type="simple")
+
+#library(randomForestSRC)
+#pima.obj <- rfsrc(type~ glu+bmi+age+npreg+ped, data = pima, importance = TRUE)
+#find.interaction(pima.obj, method = "vimp", nrep=3)
+#find.interaction(pima.obj)
+
+```
+
+**Question 2:**
+*Is there a relationship between diabetes and pregnancy?*
+
+
+##
+
+```{r}
+library(MASS)
+
+pima <-rbind(Pima.tr,Pima.te)
+pima <- pima[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
+train.ind = sample(1:517, 362, replace=FALSE)
+test.ind = setdiff(1:517, train.ind)
+pima.train <- pima[train.ind,]
+pima.test <- pima[test.ind,]
+
+fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
+predicted <- ifelse(predict(fit1, newdata = pima.test, type = "response")<0.5, "No", "Yes")
+confusion <- table(predicted, factor(pima.test$type), dnn = c("Predicted type", "True type"))
+sum(diag(confusion))/sum(confusion)
+
+fit2 = glm(type ~ glu  + bmi + ped + age + bp , family = binomial(link = logit), data = pima.train)
+predicted2 <- ifelse(predict(fit2, newdata = pima.test, type = "response")<0.5, "No", "Yes")
+confusion2 <- table(predicted2, factor(pima.test$type), dnn = c("Predicted type", "True type"))
+sum(diag(confusion2))/sum(confusion2)
+
+
+train.control= trainControl(method="repeatedcv",repeats=5)
+model <- train(type ~ ped*npreg + glu  + bmi + ped + age +npreg, data = pima, method = "glm",
+               trControl = train.control)
+print(model)
+
+
+
+g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
+
+
+g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
+plot.roc(g1.1, legacy.axes = TRUE )
+auc(g1.1)
+
+g1.2 <- roc(type ~predict(fit2,newdata=pima.test,type='response'), data = pima.test)
+
+
+g1.2 <- roc(type ~predict(fit2,newdata=pima.test,type='response'), data = pima.test)
+plot.roc(g1.2, legacy.axes = TRUE )
+auc(g1.2)
+
+
+resid.plot <- function(m.dat){
+  ggplot(m.dat , aes( predictor.value, resid.predictor ) ) +
+  geom_point(size = 0.3) +
+  geom_smooth(method = "loess") +
+  theme() +
+  facet_wrap(~ predictor, scales = "free_x")
+}
+
+confusion.m <- function(m,data.tr){
+  predicted <- ifelse(predict(m,newdata=data.tr,type='response')<.5,"No","Yes")
+(confusion1.1 <- table(predicted,factor(data.tr$type),dnn=c("Predicted type","True type")))
+}
+
+diag.dat <- function(m, type){
+  m.resid <- resid(m,type)
+  data <- m.dat <- data.frame("resid.predictor" = as.vector(m.resid), "predictor" = rep(colnames(model.matrix(m)[,-1]), each = nrow(model.matrix(m)[,-1])),  "predictor.value" = as.vector(model.matrix(m)[,-1]))
+  return(data)
+}
+
+fit1.dat <- diag.dat(fit1,c("partial"))
+resid.plot(fit1.dat)
+conf.q1 <- confusion.m(fit1,pima.test)
+
+res1<- residuals(fit1, "pearson")
+summary(res1)
+
+fit2.dat <- diag.dat(fit2,c("partial"))
+resid.plot(fit2.dat)
+conf.q1 <- confusion.m(fit2,pima.test)
+
+res2<- residuals(fit2, "pearson")
+summary(res2)
+
+q2_1= glm(type ~ npreg , family = binomial(link = logit), data = pima.train)
+
+q2_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
+
+q2_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
 ```
 
 ### R Appendix
