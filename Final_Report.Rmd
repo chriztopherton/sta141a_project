@@ -54,6 +54,10 @@ pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
 pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
 ```
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e7b90f98e04bc089875c774831c7d797eb584ba5
 
 **Summary Statistics**
 
