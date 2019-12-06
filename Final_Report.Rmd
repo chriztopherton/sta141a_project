@@ -295,22 +295,27 @@ library(caret)
 ```
 
 ```{r}
+#svm full model
 
+svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
+summary(svm.md)
+
+pedict(svm.md,pm.tr.sc$Class)
+```
+
+
+```{r}
 #svm full model 
-names(pm.tr.sc)
-
 lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
 
 summary(lin.tn)
 
-svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
-summary(svm.md)
 ```
 **pick model**
 ```{r}
 svm.ln.best<-lin.tn$best.model
-tn.ts<-predict(svm.ln.best,newdata=pm.tr.sc)
-(svm.tn.cm<-table(tn.ts,pm.tr.sc$Class))
+tn.ts<-predict(svm.ln.best,newdata=pm.ts.sc)
+(svm.tn.cm<-table(tn.ts,pm.ts.sc$Class))
 
 ln.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
 svm.tn.cm[4]/sum(svm.tn.cm[,2]), #sensitivity
