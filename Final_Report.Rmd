@@ -313,7 +313,7 @@ colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
 
 ```{r,echo=FALSE}
 
-#svm full model 
+#svm full model tune
 
 
 lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
@@ -393,7 +393,7 @@ colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
 ```
 
 ```{r,echo=FALSE}
-svm.mats<-list(svm.cm,svm.cm2,svm.cm4,svm.cm3)
+svm.mats<-list(svm.fm,svm.cm2,svm.cm4,svm.cm3)
 svm.results<-list(res.sv1,res.sv2,res.sv4,res.sv3)
 theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
 theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
