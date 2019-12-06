@@ -20,6 +20,11 @@ library(class)
 library(caret)
 library(randomForest)
 library(car)
+#install.packages('e1071', dependencies=TRUE)
+#install.packages('kernlab')
+library(e1071)
+library(kernlab)
+library(caret)
 ```
 
 
@@ -54,10 +59,6 @@ pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
 pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
 ```
 
-<<<<<<< HEAD
-=======
-
->>>>>>> e7b90f98e04bc089875c774831c7d797eb584ba5
 
 **Summary Statistics**
 
@@ -155,6 +156,9 @@ We considered reducing the dimensions of our data by finding candidate variables
 
 An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. As the above results show, our data does not meet the assumption of normality. 
 
+(4) RF
+
+RF considers all predictors,fits 1000 bootstrapped decision trees and returns the list of the variables with statistical information of the importance, including mean decrease accuracy and mean decrease gini. Respectively, these values measure accuracy and node purity reduction. Generally, larger values imply greater importance. Accuracy measures based on the confusion matrix were made for the OOB dataset RF does not use to train and our intially defined 70/30 testing set.
 
 
 **Question 1:**
@@ -163,14 +167,6 @@ An effective approach with PCA would then pursue LDA, or perhaps QDA based on th
 An intial method we utilized was SVM for determining which variables are best suited to determine Diabetes. The full svm model was calculted and then tuned to increase performance.
 
 The initial model gave the following results:
-
-```{r}
-#install.packages('e1071', dependencies=TRUE)
-#install.packages('kernlab')
-library(e1071)
-library(kernlab)
-library(caret)
-```
 
 ```{r, echo=FALSE}
 
@@ -454,16 +450,9 @@ gg1<-ggplot(mapping=aes(x=glu,y=bmi)) +
 ```
 
 
-
-
 ## Support Vector Machine
 
 Suppoert Vector Machine will be used to help confirm which variables are as important for classification. Confusion table, accuracy, sensitivity, and specificity will all be reported. SVM requires that the data be i.i.d. 
-
-
-
-
-
 
 ## Random Forest
 
