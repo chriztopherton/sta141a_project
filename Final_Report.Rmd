@@ -272,8 +272,8 @@ colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
 Once we applied the kernal change to radial for the reduced model using only the selected features, we saw accuracy and specificty both improve.
 
 ```{r,echo=FALSE}
-svm.mats<-list(svm.cm,svm.cm2,svm.cm4,svm.cm3)
-svm.results<-list(res.sv1,res.sv2,res.sv4,res.sv3)
+svm.mats<-list(svm.fm,svm.cm2,svm.cm4,svm.cm3)
+svm.results<-list(svmfm.res,res.sv2,res.sv4,res.sv3)
 theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
 theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
 names(svm.results)<-theSVM
