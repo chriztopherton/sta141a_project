@@ -346,7 +346,50 @@ colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
 
 Svm concludes that the best features to use are glu,bmi,ped, and npreg.
 
+**Change Kernal**
+-did not improve full model
+```{r}
+svm.md4<-svm(Class~.,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr4<-predict(svm.md4,pm.ts.sc[,-8])
 
+(svm.cm4<-table(svm.pr4,pm.ts.sc[,8]))
+res.sv4<-cbind(sum(diag(svm.cm4))/sum(svm.cm4),
+svm.cm4[4]/sum(svm.cm4[,2]), #sensitivity
+svm.cm4[1]/sum(svm.cm4[,1])) #specificity
+
+colnames(res.sv4)<-c('Accuracy','Sensitivity','Specificity');res.sv4
+```
+
+
+
+-radial kernal improved the reduced svm model
+```{r}
+svm.md3<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr3<-predict(svm.md3,pm.ts.sc[,c(1,2,5,6)])
+
+(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
+res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),
+svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
+svm.cm3[1]/sum(svm.cm3[,1])) #specificity
+
+colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
+```
+
+```{r}
+svm.mats<-list(svm.cm,svm.cm2,svm.cm4,svm.cm3)
+svm.results<-list(res.sv1,res.sv2,res.sv4,res.sv3)
+theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+names(svm.results)<-theSVM
+names(svm.mats)<-theSVM2
+# svm.results$`Full Linear`<-list(res.sv1,svm.cm)
+# svm.results$`Reduced Linear`<-list(res.sv2,svm.cm2)
+# svm.results$`Full Radial`<-list(res.sv4,svm.cm4)
+# svm.results$`Reduced Radial`<-list(res.sv3,svm.cm3)
+
+svm.mats
+svm.results
+```
 
 
 ### R Appendix
