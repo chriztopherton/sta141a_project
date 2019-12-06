@@ -291,16 +291,6 @@ svm.results
 
 ## KNN
 
-```{r,echo=FALSE}
-#Standardize the varaibles being used
-pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
-pm.tr.sc<-data.frame(cbind(pm.tr.sc),Class=Pim.tr[,8])
-
-pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
-pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
-```
-
-
 ## Pairwise KNN function
 
 ```{r,echo=FALSE}
@@ -461,16 +451,24 @@ set.seed(1234)
 s.ptr <- data.frame(cbind(scale(Pim.tr[-8],center=TRUE)),Pim.tr[8])
 s.pte <- data.frame(cbind(scale(Pim.te[-8],center=TRUE)),Pim.te[8])
 
-(rf <- randomForest(type ~. ,data=s.ptr,ntree=1000,importance=TRUE))
+invisible(rf <- randomForest(type ~.,data=s.ptr,ntree=1000,importance=TRUE))
 pred <- predict(rf,newdata=s.pte[-8])
+rf$confusion
 
-#cm
+#cm for OOB
+res.rfoob <- cbind(sum(diag(rf$confusion))/sum(rf$confusion),
+rf$confusion[4]/sum(rf$confusion[,2]),
+rf$confusion[1]/sum(rf$confusion[,1]))
+
+colnames(res.rfoob)<-c('Accuracy','Sensitivity','Specificity');res.rfoob
+
+#cm for test
 (rf.cm <-table(s.pte[,8],pred))
-res.rf <-cbind(sum(diag(rf.cm))/sum(rf.cm),
+res.rft <-cbind(sum(diag(rf.cm))/sum(rf.cm),
 rf.cm[4]/sum(rf.cm[,2]), #sensitivity
 rf.cm[1]/sum(rf.cm[,1])) #specificity
 
-colnames(res.rf)<-c('Accuracy','Sensitivity','Specificity');res.rf
+colnames(res.rft)<-c('Accuracy','Sensitivity','Specificity');res.rft
 
 #variable importance
 (imp_var <- data.frame(randomForest::importance(rf)))
