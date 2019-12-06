@@ -304,7 +304,7 @@ summary(svm.md)
 svm.fullpr<-predict(svm.md,pm.ts.sc)
 svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
 
-svmfm.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svmfm.res<-cbind(sum(diag(svm.fm))/sum(svm.fm),#accuracy
 svm.fm[4]/sum(svm.fm[,2]), #sensitivity
 svm.fm[1]/sum(svm.fm[,1])) #specificity
 colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
