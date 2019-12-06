@@ -99,8 +99,10 @@ for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
 {
 qqnorm(neg.db[[i]]);qqline(neg.db[[i]],col=2)
 }
+```
 
 
+```{r}
 #shapiro wilkes test for normality
 np.st<-numeric(0)
 for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
