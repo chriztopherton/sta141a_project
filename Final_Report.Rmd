@@ -401,18 +401,26 @@ s.pte <- data.frame(cbind(scale(Pim.te[-8],center=TRUE)),Pim.te[8])
 (rf <- randomForest(type ~. ,data=s.ptr,ntree=1000,importance=TRUE))
 pred <- predict(rf,newdata=s.pte[-8])
 
+#cm
 (rf.cm <-table(s.pte[,8],pred))
 res.rf <-cbind(sum(diag(rf.cm))/sum(rf.cm),
 rf.cm[4]/sum(rf.cm[,2]), #sensitivity
 rf.cm[1]/sum(rf.cm[,1])) #specificity
 
-colnames(rf.cm)<-c('Accuracy','Sensitivity','Specificity')
-
-rf.cm
+colnames(res.rf)<-c('Accuracy','Sensitivity','Specificity');res.rf
 
 #variable importance
 (imp_var <- data.frame(randomForest::importance(rf)))
 varImpPlot(rf)
+
+```
+
+** Illustration of Decision Tree **
+```{r,fig.height=4}
+require(rpart)
+fit <- rpart(pima.train$type ~.,pima.train[,-8])
+plot(fit)
+text(fit)
 
 ```
 
