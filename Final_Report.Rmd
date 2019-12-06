@@ -45,6 +45,15 @@ test.g<- setdiff(1:532,trng)
 
 Pim.tr<-Pim.N[trng,]
 Pim.te<-Pim.N[test.g,]
+
+#Standardize the varaibles being used
+pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
+pm.tr.sc<-data.frame(cbind(pm.tr.sc),Class=Pim.tr[,8])
+
+pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
+pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
+```
+
 ```
 
 **Summary Statistics**
@@ -171,7 +180,7 @@ svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
 svm.fullpr<-predict(svm.md,pm.ts.sc)
 svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
 
-svmfm.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svmfm.res<-cbind(sum(diag(svm.fm))/sum(svm.fm),#accuracy
 svm.fm[4]/sum(svm.fm[,2]), #sensitivity
 svm.fm[1]/sum(svm.fm[,1])) #specificity
 colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
