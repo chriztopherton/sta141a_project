@@ -294,10 +294,27 @@ library(kernlab)
 library(caret)
 ```
 
+```{r}
+#svm full model
+#>>>>>>> a069b6d0479eefafb5ea061973707b23cfb9c562
+
+svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
+summary(svm.md)
+
+svm.fullpr<-predict(svm.md,pm.ts.sc)
+svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
+
+svmfm.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svm.fm[4]/sum(svm.fm[,2]), #sensitivity
+svm.fm[1]/sum(svm.fm[,1])) #specificity
+colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
+```
+
+
 ```{r,echo=FALSE}
 
 #svm full model 
-names(pm.tr.sc)
+
 
 lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
 
