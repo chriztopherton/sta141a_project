@@ -129,35 +129,70 @@ pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
 ## Pairwise KNN function
 
 ```{r}
-pw.knn<-function(x,y,z) ##need to get it to print confusion matrix too
+
+#used to get all pw results. With k optimizer used to find k that would give highest accuracy
+
+pw.knn<-function(x,y,z) 
 {
 pm.knn<-knn(pm.tr.sc[,c(x,y)],pm.ts.sc[,c(x,y)],pm.tr.sc[,8],k=z)
 
-(pm.kn.cm<-table(pm.knn,pm.ts.sc$Class))
-
+pm.kn.cm<-table(pm.knn,pm.ts.sc$Class)
 ac<-sum(diag(pm.kn.cm)/sum(pm.kn.cm))
 se<-pm.kn.cm[4]/sum(pm.kn.cm[,2])
 sp<-pm.kn.cm[1]/sum(pm.kn.cm[,1])
 pw.knn.res<-cbind(ac,se,sp)
 colnames(pw.knn.res)<-c('accuracy','sensitivity','specificity')
-return(pw.knn.res)
+return(list(pm.kn.cm,pw.knn.res))
 }
-
-pm.knn<-knn(pm.tr.sc[,c(1,2)],pm.ts.sc[,c(1,2)],pm.tr.sc[,8],k=23)
-
-pm.kn.cm<-table(pm.knn,pm.ts.sc$Class)
-
-sum(diag(pm.kn.cm)/sum(pm.kn.cm))
-pm.kn.cm[4]/sum(pm.kn.cm[,2])
-pm.kn.cm[1]/sum(pm.kn.cm[,1])
-
 
 pw.knn(1,2,23)
 #test
 ```
 
+```{r}
+#K optimizer CV method
+# install.packages('caret')
+# library(caret)
+# 
+# names(pm.tr.sc)
+# 
+# model1<-train(Class~.,data=pm.tr.sc,method='knn',
+#               tuneGrid=expand.grid(.k=1:100),
+#               metric='Accuracy',
+#               trControl=trainControl(
+#                 method = 'repeatedcv',
+#                 number = 10,
+#                 repeats = 15))
+# model1$bestTune# 
+
+```
 
 
+```{r}
+#K accuracy optimizer
+
+k.opt<-function(x,y)
+{
+cv.error<-numeric(0)
+t<-1
+for (i in 1:200){
+  
+pm.knnK<-knn(pm.tr.sc2[,c(x,y)],pm.ts.sc2[,c(x,y)],pm.tr.sc[,8],k=t)
+pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
+cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
+
+t<-t+1
+}
+cv.error<-matrix(cv.error)
+cv.error.max<-max(cv.error)
+k.optm<-which.max(cv.error)
+
+return(c(cv.error.max,k.optm))
+}
+
+k.opt(1,2)
+
+```
 **Full KNN**
 ```{r}
 library(class)
@@ -516,25 +551,7 @@ pm.kn.cm12[1]/sum(pm.kn.cm12[,1]) #specificity
 
 
 
-Optimization of K
-```{r}
-#K optimizer
-#cv.error<-numeric(0)
-#t<-1
-#for (i in 1:200){
-  
-#pm.knnK<-knn(pm.tr.sc2[,c(1,2,4,5,6)],pm.ts.sc2[,c(1,2,4,5,6)],pm.tr.sc[,8],k=t)
-#pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
-#cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
 
-#t<-t+1
-#}
-#cv.error<-matrix(cv.error)
-
-#max(cv.error)
-
-#(k.opt<-which.max(cv.error))
-```
 
 
 
@@ -591,23 +608,6 @@ svm.cm3[1]/sum(svm.cm3[,1])) #specificity
 colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
 ```
 Dropping skin didn't have any effect on the model. 
-```{r}
-#K optimizer CV method
-#install.packages('caret')
-#library(caret)
-
-#names(pm.tr.sc)
-
-#model1<-train(Class~.,data=pm.tr.sc,method='knn',
- #             tuneGrid=expand.grid(.k=1:100),
-  #            metric='Accuracy',
-   #           trControl=trainControl(
-    #            method = 'repeatedcv',
-     #           number = 10,
-      #          repeats = 15))
-#model1$bestTune
-
-```
 
 
 
