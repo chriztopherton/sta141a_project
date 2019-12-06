@@ -118,7 +118,22 @@ For the group negative for diabetes, we can see from the shapiro wilks test that
 
 The only two variables that exhibit normality based on the shapiro wilks test for both yes and no diabetes groups are bp and bmi. Therefore we intend to focus on methods that do not rely on the assumption of normality. 
 
-# PCA
+
+
+
+
+**Methodology**
+
+(1) KNN
+
+KNN only requires that our data be from a random sample. Additionally we will standardize our dataset before carrying out our analysis. The data has been split with 70% of the data being alloted for training and the remaining 30% being used for testing. It is difficult to gain any inference from KNN so we will mostly be using it to confirm other methods conclusions regarding which variables are best for classifying diabetes. 
+
+(2) SVM
+
+SVM will be used to answer which variables will be most useful in predicting diabetes. We initially used SVM with all the predictors. We then used SVM feature selection to determine which variables will be most useful in correcly classifying diabetes. The results were then compared used both linear and radial kernals.
+
+(3) PCA 
+
 ```{r,echo=FALSE}
 pima.pca <- prcomp(Pim.tr[,-8], center = TRUE,scale = TRUE)
 summary(pima.pca) # PCI explains 34%,PC2 explains 20%
@@ -129,14 +144,10 @@ summary(pima.pca) # PCI explains 34%,PC2 explains 20%
 
 We considered reducing the dimensions of our data by finding candidate variables contributing in direction of the most variance, thus ignoring any of the unnecessary noise in our data. Particularly, we wished to maximize the amount of information along these directions, or namely, the eigenvectors of our dimensions. PC1,PC2,PC3,PC4,PC5 collectively describe at least 90% of the variance. However, due to the lack of high correlation among the variables, PCA fails to determine the minimal number of components to account for the variability and thus, most, if not all, of the predictors may be necessary for the determination of diabetes.
 
-
 An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. 
 
 
-
 ## KNN
-
-KNN only requires that our data be from a random sample. Additionally we will standardize our dataset before carrying out our analysis. The data has been split with 70% of the data being alloted for training and the remaining 30% being used for testing. It is difficult to gain any inference from KNN so we will mostly be using it to confirm other methods conclusions regarding which variables are best for classifying diabetes. 
 
 ```{r,echo=FALSE}
 #Standardize the varaibles being used
