@@ -32,8 +32,7 @@ library(party)
 
 
 ## Collaborators:
-  Grant Smith - ggsmith@ucdavis.edu
-  Christopher Ton - chrton@ucdavis.edu
+  Grant Smith, Isaiah Valencia, Hun Lee, Christopher Ton
 
 
 ## Overview of the problem
@@ -53,6 +52,8 @@ test.g<- setdiff(1:532,trng)
 
 Pim.tr<-Pim.N[trng,]
 Pim.te<-Pim.N[test.g,]
+
+head(Pim.tr)
 
 #Standardize the varaibles being used
 pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
@@ -414,11 +415,14 @@ confusionMatrix(rf.1.pred,pima.test$type)
 Small improvement in prediction may not be significant enough to support the exclusion of outliers.
 
 ** Illustration of Decision Tree **
+
 ```{r,echo=FALSE,warning=FALSE,,fig.height=5,fig.width=5}
 #library(party)
 x <- ctree(type ~ glu  + bmi + ped + age + npreg  , data=pima.train)
 plot(x, type="simple")
 ```
+
+For illustration of the process, we consider a single decision tree,produced from the package Rpart, that analyzes 5 variables: glu, ped, age, bmi and npreg.The tree finds a cutoff point for a particular variable that increases entropy in the system. For instance, glucose levels would be the greatest dividing factor. The process continues to divide the separated groups based on the next variable. A random forest algorithm does this at random and repeatedly for a specified number of trees and the final decision is determined as whole by count of the terminal nodes. 
 
 
 **Question 2:**
@@ -433,9 +437,8 @@ find.interaction(pima.obj)
 Considering there is a high correlation between “npreg” and “age”, it does make sense that these two variables has the highest interaction. The interesting result is that the interaction between “ped” and “npreg” has the second highest interaction as expected because we were able to confirm that the interaction effect between “ped” and “npreg” contributes to a positive result in increasing accuracy in both K-fold and logistic regression methods. 
 
 
-
 **Question 3:**
-*Is there a relationship between blood pressure and pregnancy?*
+*Is there a relationship between blood pressure and diabetes?*
 
 ```{r,echo=FALSE,warning=FALSE,fig.height=3,fig.width=5}
 
@@ -467,6 +470,15 @@ list(cbind(sum(diag(confusion2))/sum(confusion2),
            confusion2[1]/sum(confusion2[,1])))#specificity
 ```
 
+We created two logistic regression models: one with “glu” + “bmi” + “ped” + “age” + “bp” and the other without blood pressure, “bp”. As the model summary indicates, we are able to see that all the independent variables are significant except “bp” in the model with “glu” + “bmi” + “ped” + “age” + “bp” whereas dropping “bp” variable not only decreases AIC value and gives all significant independent variables in the logistic model.
+
+
+*Purposeful Selection: comparing likelihood ratio tests for models
+```{r,echo=FALSE,warning=FALSE}
+anova(fit1,fit2,test="LRT")
+```
+
+When we conducted the likelihood-ratio test for the goodness of fit of two models based on the ratio of their likelihoods under the null hypothesis: the first model = the first model with “bp”, we were not able to significant evidence to reject the Ho and hence we concluded the variable “bp” is not needed for the diabetes prediction model.
 
 **K-Fold Cross Validation**
 ```{r,echo=FALSE,warning=FALSE}
@@ -526,8 +538,6 @@ partial_pearson(fit2)
 ```
 
 
-## needs written explination
-
 **Question 4:**
 *How does pedigree effect pregnant women and diabetes?*
 
@@ -542,7 +552,7 @@ CI <- round(exp(confint(fit1,level = .95)),4)
 CI
 ```
 
-## needs written explination or state its answered with question 5
+
 
 **Question 5:**
 *Is there a relationship between diabetes and pregnancy?*
@@ -554,11 +564,15 @@ q5_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
 summary(q5_2)
 q5_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
 summary(q5_3)
+
+anova(q5_1,q5_2,q5_3,test="LRT")
+
 ```
 
-Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. In descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant.
+Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. In descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant. In terms of choosing which variable is better for prediction accuracy between “age” and “npreg”, we prefer age to pregnancy because not only does the model with “age”  give lower AIC, but also it tends to give higher prediction accuracy.
 
-## Overall Intepretation
+
+## Overall Intepretation and Discussions for Questions 3,4,5
 *Effect of Variables on odds of Diabetes in Pima Women*
 
 The interpretation of the variables included in the model will be understood as the effect of the variable on the odds (not log odds) of diabetes for female pima indian women.That is, for each unit increase in glucose, bmi, pedigree, and age the effects is an increase in odds of diabetes for Pima indian women. This effect is the exp() for each parameter coefficient, which can be seen in vector below. Since this is a random variable, a 95% confidence interval is provided below for effects. Given that interpretation is important, each variable will be explained at length. One unit increase in Glucose increases the odds of diabetes at by at least 3.1 percent and at most 5.5 percent. One unit increase in BMI increases the odds by at least 6.3 percent to at most 17 percent, hold all other variables constant. One unit increase in the pedigree function increases the odds by at least 2.44 times to at most 15 times as much, thus the most contributing variable in the model. Lastly, a one unit increase in age increased odd by at least 4.5 percent to at most 11 percent. This can also be interpreted in probability and not odds, as previously stated. That is, since the sign of all exponentiated variables are positive, as a single variable increases, holding all others constant, so to does the probability of diabetes in Pima indian women.
