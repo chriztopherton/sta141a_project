@@ -1,0 +1,567 @@
+---
+title: "Sta141a Final Report"
+output:
+  html_document: default
+  pdf_document: default
+date: "12/9/2019"
+---
+
+```{r setup, include=FALSE,echo=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(ggbiplot)
+library(MASS)
+library(ISLR)
+library(boot)
+library(class)
+library(caret)
+library(randomForest)
+library(randomForestSRC)
+library(car)
+#install.packages('e1071', dependencies=TRUE)
+#install.packages('kernlab')
+library(e1071)
+library(kernlab)
+library(caret)
+library(pROC)
+library(party)
+```
+
+
+## Collaborators:
+  Grant Smith - ggsmith@ucdavis.edu
+  Christopher Ton - chrton@ucdavis.edu
+
+
+## Overview of the problem
+We aim to predict whether or not a Pima Indian Woman is diabetic or not based on her health characteristics such as pregnancy, glucose, blood pressure, skin, bmi, pedigree, and age. Additionally, we will elaborate on which biological features (i.e. glucose levels)  are best suited in correctly identifying diabetes in the subject group.  Throughout this analysis we will look at accuracy, sensitivity, and specificity. While we want all of these values to be high, some analysis will emphasize sensitivity over specificity. Due to the medical nature of the data we believe importance should be placed on correctly identifying an individual with the disease as correct and accurate diagnosis plays an important role in proper treatment of patients.
+
+## Exploratory Data Analysis
+We first calculated summary statistics for the dataset in order to obtain a clearer picture of the variables we are working with. 
+
+**(Data)**
+```{r,echo=FALSE,warning=FALSE}
+data("Pima.te")
+
+#training and test data (70:30) split
+Pim.N<-as.data.frame(rbind(Pima.te,Pima.tr))
+trng = sample(1:532, 362, replace=FALSE)
+test.g<- setdiff(1:532,trng)
+
+Pim.tr<-Pim.N[trng,]
+Pim.te<-Pim.N[test.g,]
+
+#Standardize the varaibles being used
+pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
+pm.tr.sc<-data.frame(cbind(pm.tr.sc),Class=Pim.tr[,8])
+
+pm.ts.sc<-data.frame(scale(Pim.te[-8],center = TRUE,scale=TRUE))
+pm.ts.sc<-data.frame(cbind(pm.ts.sc),Class=Pim.te[,8])
+```
+
+
+**Summary Statistics**
+
+The data set we are using comes from the package 'mass' and consists of the variables npreg, glu, bp, skin, bmi, ped, and age. Type/Class is a binary variable indicating whether a subject has or does not have diabetes. In our original proposal the variable 'insulin' was to be included in the dataset, however due to the high number of missing values we chose to drop this variable from the project. 
+
+```{r,echo=FALSE}
+summary(Pim.N)
+```
+
+Additionally, we split our data set into training and test sets with a ratio of 70:30. The training set consists of 372 observations and the test set consists of 160 observations. 
+
+
+## Data Analysis
+
+**Assumptions**
+
+Normality Results: 
+
+Initial qq plots for the key variables indicated that normality violations would be an issue regarding this dataset. The plots below for example represent glu, age, ped, and bmi
+
+```{r,echo=FALSE}
+
+pos.db<-subset(Pima.tr, type=='Yes')
+par(mfrow=c(2,4))
+for (i in c('glu','age','ped','bmi','npreg','skin','bp'))
+{
+  qqnorm(pos.db[[i]]);qqline(pos.db[[i]],col=2)
+}
+```
+
+
+```{r,echo=FALSE}
+pp.st<-numeric(0)
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+s.test<-shapiro.test(pos.db[[i]])
+pp.st[i]<-s.test$p.value
+}
+round(pp.st,4)
+```
+
+The shapiro wilks test confirms that only bp, bmi, and glu are normally distributed. (using 0.01 alpha)
+```{r,echo=FALSE}
+neg.db<-subset(Pima.tr, type=='No')
+
+par(mfrow=c(3,3))
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+qqnorm(neg.db[[i]]);qqline(neg.db[[i]],col=2)
+}
+```
+
+
+```{r,echo=FALSE}
+#shapiro wilkes test for normality
+np.st<-numeric(0)
+for (i in c('glu','age','ped','bmi','npreg','bp','skin'))
+{
+s.test<-shapiro.test(neg.db[[i]])
+np.st[i]<-s.test$p.value
+}
+round(np.st,3)
+```
+For the group negative for diabetes, we can see from the shapiro wilks test that skin, glu, age, ped, and npreg all violate the normality assumption. Only bp and bmi are normal. (using .01 alpha)
+
+**Conclusion from normality tests**
+
+The only two variables that exhibit normality based on the shapiro wilks test for both yes and no diabetes groups are bp and bmi. Therefore we intend to focus on methods that do not rely on the assumption of normality. 
+
+
+**Methodology**
+
+(1) KNN
+
+KNN only requires that our data be from a random sample. Additionally we will standardize our dataset before carrying out our analysis. The data has been split with 70% of the data being alloted for training and the remaining 30% being used for testing. It is difficult to gain any inference from KNN so we will mostly be using it to confirm other methods conclusions regarding which variables are best for classifying diabetes. 
+
+(2) SVM
+
+SVM will be used to answer which variables will be most useful in predicting diabetes. We initially used SVM with all the predictors. We then used SVM feature selection to determine which variables will be most useful in correcly classifying diabetes. The results were then compared used both linear and radial kernals.
+
+(3) PCA 
+
+```{r,echo=FALSE}
+pima.pca <- prcomp(Pim.tr[,-8], center = TRUE,scale = TRUE)
+summary(pima.pca) # PCI explains 34%,PC2 explains 20%
+
+#cor(pima[,-8])
+
+```
+
+We considered reducing the dimensions of our data by finding candidate variables contributing in direction of the most variance, thus ignoring any of the unnecessary noise in our data. Particularly, we wished to maximize the amount of information along these directions, or namely, the eigenvectors of our dimensions. PC1,PC2,PC3,PC4,PC5 collectively describe at least 90% of the variance. However, due to the lack of high correlation among the variables, PCA fails to determine the minimal number of components to account for the variability and thus, most, if not all, of the predictors may be necessary for the determination of diabetes.
+
+An effective approach with PCA would then pursue LDA, or perhaps QDA based on the determined principal components. To meet the assumptions of discriminant analysis, we tested to see if normality holds. As the above results show, our data does not meet the assumption of normality. 
+
+(4) RF
+
+RF considers all predictors,fits 1000 bootstrapped decision trees and returns the list of the variables with statistical information of the importance, including mean decrease accuracy and mean decrease gini. Respectively, these values measure accuracy and node purity reduction. Generally, larger values imply greater importance. Accuracy measures based on the confusion matrix were made for the OOB dataset RF does not use to train and our intially defined 70/30 testing set.
+
+(5) Logistic Regression
+
+
+(6) Unused Methods
+
+Within our proposal we originally planned to use LDA/QDA and Bayes Naive Classifiers in our analysis. Upon testing for normality we eliminated LDA/QDA from potential use due to the normality assumption violation. For Bayes Naive Classifiers, our research shows that BNC doesn't work well with interacting features and there was little to gain in terms of statistical inference.
+
+
+**Question 1:**
+*What is the best combination of variables in predicting diabetes in Pima Indians?*
+
+An intial method we utilized was SVM for determining which variables are best suited to determine Diabetes. The full svm model was calculted and then tuned to increase performance.
+
+The initial model gave the following results:
+
+```{r, echo=FALSE}
+
+#svm full model
+#>>>>>>> a069b6d0479eefafb5ea061973707b23cfb9c562
+
+svm.md<-svm(Class~.,data=pm.tr.sc,type= 'C-classification', kernel='linear')
+#summary(svm.md)
+
+svm.fullpr<-predict(svm.md,pm.ts.sc)
+svm.fm<-table(svm.fullpr,pm.ts.sc$Class)
+
+svmfm.res<-cbind(sum(diag(svm.fm))/sum(svm.fm),#accuracy
+svm.fm[4]/sum(svm.fm[,2]), #sensitivity
+svm.fm[1]/sum(svm.fm[,1])) #specificity
+colnames(svmfm.res)<-c('Accuracy','Sensitivity','Specificity');svmfm.res
+list(svm.fm,svmfm.res)
+```
+
+Tuning the model in order to further optomize the results yieled a model with a cost  of 0.1, however; the results did not improve the model.
+```{r,echo=FALSE}
+#svm full model 
+lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
+
+summary(lin.tn)
+
+```
+
+```{r,echo=FALSE}
+#pick model
+svm.ln.best<-lin.tn$best.model
+
+tn.ts<-predict(svm.ln.best,newdata=pm.ts.sc)
+svm.tn.cm<-table(tn.ts,pm.ts.sc$Class)
+
+ln.res<-cbind(sum(diag(svm.tn.cm))/sum(svm.tn.cm),#accuracy
+svm.tn.cm[4]/sum(svm.tn.cm[,2]), #sensitivity
+svm.tn.cm[1]/sum(svm.tn.cm[,1])) #specificity
+colnames(ln.res)<-c('Accuracy','Sensitivity','Specificity')
+list(svm.tn.cm,ln.res)
+```
+
+**select features**
+```{r,echo=FALSE,,fig.height=3,fig.width=5}
+set.seed(2)
+
+feat<-rfeControl(functions=lrFuncs, method="cv", number=10)
+
+svm.feat <- rfe(pm.tr.sc[,1:7], pm.tr.sc[,8],sizes = c(7, 6, 5, 4),
+              rfeControl = feat, method = "svmLinear")
+
+svm.feat
+plot(svm.feat)
+```
+
+**SVM with selected features**
+```{r,echo=FALSE}
+
+svm.md2<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='linear')
+svm.pr2<-predict(svm.md2,pm.ts.sc[,c(1,2,5,6)])
+
+(svm.cm2<-table(svm.pr2,pm.ts.sc[,8]))
+res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
+svm.cm2[4]/sum(svm.cm2[,2]), #sensitivity
+svm.cm2[1]/sum(svm.cm2[,1])) #specificity
+
+colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
+```
+
+Svm concludes that the best features to use are glu,bmi,ped, and npreg.
+
+Even with the best features used in the svm model, we saw little performance increase. The next step we took was to attemp to use different kernal's to see if results improved.
+
+**Change Kernal**
+
+Using the full model we only saw specificity increase slightly but accuracy and sensitivity did not improve.
+```{r,echo=FALSE}
+svm.md4<-svm(Class~.,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr4<-predict(svm.md4,pm.ts.sc[,-8])
+
+(svm.cm4<-table(svm.pr4,pm.ts.sc[,8]))
+res.sv4<-cbind(sum(diag(svm.cm4))/sum(svm.cm4),
+svm.cm4[4]/sum(svm.cm4[,2]), #sensitivity
+svm.cm4[1]/sum(svm.cm4[,1])) #specificity
+
+colnames(res.sv4)<-c('Accuracy','Sensitivity','Specificity');res.sv4
+```
+
+-radial kernal improved the reduced svm model
+```{r,echo=FALSE}
+svm.md3<-svm(Class~glu+bmi+ped+npreg,pm.tr.sc,type="C-classification",kernel='radial')
+svm.pr3<-predict(svm.md3,pm.ts.sc[,c(1,2,5,6)])
+
+(svm.cm3<-table(svm.pr3,pm.ts.sc[,8]))
+res.sv3<-cbind(sum(diag(svm.cm3))/sum(svm.cm3),
+svm.cm3[4]/sum(svm.cm3[,2]), #sensitivity
+svm.cm3[1]/sum(svm.cm3[,1])) #specificity
+
+colnames(res.sv3)<-c('Accuracy','Sensitivity','Specificity');res.sv3
+```
+
+Once we applied the kernal change to radial for the reduced model using only the selected features, we saw accuracy and specificty both improve.
+
+```{r,echo=FALSE}
+svm.mats<-list(svm.fm,svm.cm2,svm.cm4,svm.cm3)
+svm.results<-list(svmfm.res,res.sv2,res.sv4,res.sv3)
+theSVM<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+theSVM2<-c('Full Linear','Reduced Linear','Full Radial','Reduced Radial')
+names(svm.results)<-theSVM
+names(svm.mats)<-theSVM2
+# svm.results$`Full Linear`<-list(res.sv1,svm.cm)
+# svm.results$`Reduced Linear`<-list(res.sv2,svm.cm2)
+# svm.results$`Full Radial`<-list(res.sv4,svm.cm4)
+# svm.results$`Reduced Radial`<-list(res.sv3,svm.cm3)
+
+svm.mats
+svm.results
+
+```
+
+
+
+
+## KNN
+
+**Full KNN**
+
+Using Knn with all variables yields the following results which perform similarly to SVM.
+```{r,echo=FALSE}
+library(class)
+
+pm.knn12<-knn(pm.tr.sc[,-8],pm.ts.sc[,-8],pm.tr.sc[,8],k=16)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+list(cbind(sum(diag(pm.kn.cm12)/sum(pm.kn.cm12)),
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]), #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]))) #specificity
+```
+
+**KNN with logical vars(glu,bp,ped,age)**
+
+Using knn with the selected variables from SVM showed performed higher than 
+
+```{r,echo=FALSE}
+#names(pm.tr.sc)
+pm.knn12<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=7)
+(pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
+list(cbind(sum(diag(pm.kn.cm12)/sum(pm.kn.cm12)),
+pm.kn.cm12[4]/sum(pm.kn.cm12[,2]), #sensitivity
+pm.kn.cm12[1]/sum(pm.kn.cm12[,1]))) #specificity
+```
+
+
+```{r,echo=FALSE}
+#K optimizer CV method
+#names(pm.tr.sc)
+
+model1<-train(Class~glu+ped+npreg+bmi,data=pm.tr.sc,method='knn',
+              tuneGrid=expand.grid(.k=1:10),
+              metric='Accuracy',
+              trControl=trainControl(
+                method = 'repeatedcv',
+                number = 10,
+                repeats = 15))
+model1$bestTune
+
+```
+
+```{r,echo=FALSE}
+cv.error<-numeric(0)
+t<-1
+for (i in 1:200){
+  
+pm.knnK<-knn(pm.tr.sc[,c(1,2,5,6)],pm.ts.sc[,c(1,2,5,6)],pm.tr.sc[,8],k=t)
+pm.kn.cmK<-table(pm.knnK,pm.ts.sc$Class)
+cv.error[i]<-(sum(diag(pm.kn.cmK))/sum(pm.kn.cmK))
+
+t<-t+1
+}
+cv.error<-matrix(cv.error)
+cv.error.max<-max(cv.error)
+(k.optm<-which.max(cv.error))
+```
+
+
+## Random Forest
+
+Classification based on all scaled predictors, assessment for OOB set
+
+```{r,echo=FALSE}
+set.seed(1234)
+s.ptr <- data.frame(cbind(scale(Pim.tr[-8],center=TRUE)),Pim.tr[8])
+s.pte <- data.frame(cbind(scale(Pim.te[-8],center=TRUE)),Pim.te[8])
+
+invisible(rf <- randomForest(type ~.,data=s.ptr,ntree=1000,importance=TRUE))
+pred <- predict(rf,newdata=s.pte[-8])
+rf$confusion
+
+#cm for OOB
+res.rfoob <- cbind(sum(diag(rf$confusion))/sum(rf$confusion),
+rf$confusion[4]/sum(rf$confusion[,2]),
+rf$confusion[1]/sum(rf$confusion[,1]))
+
+colnames(res.rfoob)<-c('Accuracy','Sensitivity','Specificity');res.rfoob
+```
+
+Assessment for splitted scaled testing set
+
+```{r}
+#cm for test
+(rf.cm <-table(s.pte[,8],pred))
+res.rft <-cbind(sum(diag(rf.cm))/sum(rf.cm),
+rf.cm[4]/sum(rf.cm[,2]), #sensitivity
+rf.cm[1]/sum(rf.cm[,1])) #specificity
+
+colnames(res.rft)<-c('Accuracy','Sensitivity','Specificity');res.rft
+
+#variable importance
+(imp_var <- data.frame(randomForest::importance(rf)))
+#varImpPlot(rf)
+
+```
+
+The accuracy score for both testing sets are identical, indicating that RF is a consistent classifier.
+
+We try to remove any outliers (although RF is insensitive to it), to see if improvements can be made.
+
+```{r,echo=FALSE}
+#ggpairs(pima[c("npreg","glu","bp","skin","bmi","ped","age")])
+pima <-rbind(Pima.tr,Pima.te)
+pima <- pima[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
+train.ind = sample(1:517, 362, replace=FALSE)
+test.ind = setdiff(1:517, train.ind)
+
+pima.train <- pima[train.ind,]
+pima.test <- pima[test.ind,]
+
+rf.train.1 = pima.train[c("age","glu","ped","bmi")]
+rf.label = as.factor(pima.train$type)
+
+rf.1 = randomForest(x = rf.train.1, y = rf.label, importance = TRUE, ntree =2000)
+rf.1.pred = predict(rf.1, pima.test)
+
+cm = table(rf.1.pred,pima.test$type)
+sum(diag(cm))/sum(cm)
+confusionMatrix(rf.1.pred,pima.test$type)
+
+#varImpPlot(rf.1)
+```
+
+Small improvement in prediction may not be significant enough to support the exclusion of outliers.
+
+** Illustration of Decision Tree **
+```{r,echo=FALSE,warning=FALSE,,fig.height=5,fig.width=5}
+#library(party)
+x <- ctree(type ~ glu  + bmi + ped + age + npreg  , data=pima.train)
+plot(x, type="simple")
+```
+
+
+**Question 2:**
+*Is there any interaction effect between the interested variables?*
+
+```{r}
+pima.obj <- rfsrc(type~ npreg+glu+bp+skin+bmi+ped+age, data = pima, importance = TRUE)
+find.interaction(pima.obj, method = "vimp", nrep=3)
+find.interaction(pima.obj)
+```
+
+**Question 3:**
+*Is there a relationship between blood pressure and pregnancy?*
+
+```{r,echo=FALSE,warning=FALSE,fig.height=3,fig.width=5}
+
+pima <-rbind(Pima.tr,Pima.te)
+pima <- pima[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
+train.ind = sample(1:517, 362, replace=FALSE)
+test.ind = setdiff(1:517, train.ind)
+pima.train <- pima[train.ind,]
+pima.test <- pima[test.ind,]
+```
+
+Comparison of logistic model with & without bp:
+
+```{r}
+fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
+summary(fit1)
+predicted <- ifelse(predict(fit1, newdata = pima.test, type = "response")<0.5, "No", "Yes")
+(confusion <- table(predicted, factor(pima.test$type), dnn = c("Predicted type", "True type")))
+list(cbind(sum(diag(confusion))/sum(confusion),
+           confusion[4]/sum(confusion[,2]),#sensitivity
+           confusion[1]/sum(confusion[,1])))#specificity
+
+fit2 = glm(type ~ glu  + bmi + ped + age + bp , family = binomial(link = logit), data = pima.train)
+summary(fit2)
+predicted2 <- ifelse(predict(fit2, newdata = pima.test, type = "response")<0.5, "No", "Yes")
+(confusion2 <- table(predicted2, factor(pima.test$type), dnn = c("Predicted type", "True type")))
+list(cbind(sum(diag(confusion2))/sum(confusion2),
+           confusion2[4]/sum(confusion2[,2]),#sensitivity
+           confusion2[1]/sum(confusion2[,1])))#specificity
+```
+
+
+** K-Fold Cross Validation **
+```{r}
+train.control= trainControl(method="repeatedcv",repeats=5)
+model <- train(type ~ ped*npreg + glu  + bmi + ped + age +npreg, data = pima, method = "glm",
+               trControl = train.control)
+print(model)
+
+g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
+
+g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
+plot.roc(g1.1, legacy.axes = TRUE )
+auc(g1.1)
+
+g1.2 <- roc(type ~predict(fit2,newdata=pima.test,type='response'), data = pima.test)
+
+g1.2 <- roc(type ~predict(fit2,newdata=pima.test,type='response'), data = pima.test)
+plot.roc(g1.2, legacy.axes = TRUE )
+auc(g1.2)
+```
+
+```{r,echo=FALSE}
+resid.plot <- function(m.dat){
+  ggplot(m.dat , aes( predictor.value, resid.predictor ) ) +
+  geom_point(size = 0.3) +
+  geom_smooth(method = "loess") +
+  theme() +
+  facet_wrap(~ predictor, scales = "free_x")
+}
+
+confusion.m <- function(m,data.tr){
+  predicted <- ifelse(predict(m,newdata=data.tr,type='response')<.5,"No","Yes")
+(confusion1.1 <- table(predicted,factor(data.tr$type),dnn=c("Predicted type","True type")))
+}
+
+diag.dat <- function(m, type){
+  m.resid <- resid(m,type)
+  data <- m.dat <- data.frame("resid.predictor" = as.vector(m.resid), "predictor" = rep(colnames(model.matrix(m)[,-1]), each = nrow(model.matrix(m)[,-1])),  "predictor.value" = as.vector(model.matrix(m)[,-1]))
+  return(data)
+}
+```
+
+```{r}
+
+partial_pearson <- function(fit)
+{
+  fit.dat <- diag.dat(fit,c("partial"))
+  print(resid.plot(fit.dat))
+  conf.q1 <- confusion.m(fit,pima.test)
+  res<- residuals(fit, "pearson")
+  print(summary(res))
+}
+
+partial_pearson(fit1)
+partial_pearson(fit2)
+
+```
+
+**Question 4:**
+*How does pedigree effect pregnant women and diabetes?*
+
+```{r,echo=FALSE}
+fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
+
+summ <- summary(fit1)
+summ
+coeff<-data.frame(summ$coefficients)
+(odds.inc <- round(exp(coeff$Estimate), 4) )
+CI <- round(exp(confint(fit1,level = .95)),4)
+CI
+```
+
+
+**Question 5:**
+*Is there a relationship between diabetes and pregnancy?*
+
+```{r}
+q5_1= glm(type ~ npreg , family = binomial(link = logit), data = pima.train)
+summary(q5_1)
+q5_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
+summary(q5_2)
+q5_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
+summary(q5_3)
+```
+
+Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. In descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant.
+
+### R Appendix
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
