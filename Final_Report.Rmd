@@ -24,7 +24,10 @@ library(car)
 #install.packages('kernlab')
 library(e1071)
 library(kernlab)
+<<<<<<< Updated upstream
 library(caret)
+=======
+>>>>>>> Stashed changes
 library(pROC)
 ```
 
@@ -160,6 +163,14 @@ RF considers all predictors,fits 1000 bootstrapped decision trees and returns th
 
 (5) Logistic Regression
 
+<<<<<<< Updated upstream
+=======
+
+(6) Unused Methods
+
+Within our proposal we originally planned to use LDA/QDA and Bayes Naive Classifiers in our analysis. Upon testing for normality we eliminated LDA/QDA from potential use due to the normality assumption violation. For Bayes Naive Classifiers, our research shows that BNC doesn't work well with interacting features and there was little to gain in terms of statistical inference.
+
+>>>>>>> Stashed changes
 **Question 1:**
 *What is the best combination of variables in predicting diabetes in Pima Indians?*
 
