@@ -130,9 +130,6 @@ For the group negative for diabetes, we can see from the shapiro wilks test that
 The only two variables that exhibit normality based on the shapiro wilks test for both yes and no diabetes groups are bp and bmi. Therefore we intend to focus on methods that do not rely on the assumption of normality. 
 
 
-
-
-
 **Methodology**
 
 (1) KNN
@@ -161,6 +158,7 @@ An effective approach with PCA would then pursue LDA, or perhaps QDA based on th
 
 RF considers all predictors,fits 1000 bootstrapped decision trees and returns the list of the variables with statistical information of the importance, including mean decrease accuracy and mean decrease gini. Respectively, these values measure accuracy and node purity reduction. Generally, larger values imply greater importance. Accuracy measures based on the confusion matrix were made for the OOB dataset RF does not use to train and our intially defined 70/30 testing set.
 
+(5) Logistic Regression
 
 **Question 1:**
 *What is the best combination of variables in predicting diabetes in Pima Indians?*
@@ -390,7 +388,8 @@ plot(fit)
 text(fit)
 #test
 ```
-```{r}
+
+```{r,echo=FALSE}
 #library(GGally)
 library(MASS)
 library(randomForest)
@@ -520,7 +519,7 @@ q2_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
 **Question 3:**
 *How does pedigree effect pregnant women and diabetes?*
 
-```{r}
+```{r,echo=FALSE}
 fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
 
 summ <- summary(fit1)
