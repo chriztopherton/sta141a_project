@@ -186,7 +186,7 @@ list(svm.fm,svmfm.res)
 ```
 
 Tuning the model in order to further optomize the results yieled a model with a cost  of 0.1, however; the results did not improve the model.
-```{r}
+```{r,echo=FALSE}
 #svm full model 
 lin.tn<-tune.svm(Class~.,data=pm.tr.sc,kernel='linear',cost=c(0.001,0.01,0.1,1,5,10))
 
@@ -331,7 +331,7 @@ model1$bestTune#
 
 ```
 
-```{r}
+```{r,echo=FALSE}
 cv.error<-numeric(0)
 t<-1
 for (i in 1:200){
@@ -376,23 +376,12 @@ colnames(res.rft)<-c('Accuracy','Sensitivity','Specificity');res.rft
 
 #variable importance
 (imp_var <- data.frame(randomForest::importance(rf)))
-varImpPlot(rf)
+#varImpPlot(rf)
 
 ```
 
-** Illustration of Decision Tree **
-```{r,fig.height=4,echo=FALSE}
-require(rpart)
-fit <- rpart(s.ptr$type ~.,s.ptr[,-8])
-plot(fit)
-text(fit)
-#test
-```
 
 ```{r,echo=FALSE}
-#library(GGally)
-library(MASS)
-library(randomForest)
 #ggpairs(pima[c("npreg","glu","bp","skin","bmi","ped","age")])
 pima <-rbind(Pima.tr,Pima.te)
 pima <- pima[-c(204,296,417,79,292,175,132,72,320,520,428,490,399,210,403),]
@@ -408,13 +397,15 @@ rf.label = as.factor(pima.train$type)
 rf.1 = randomForest(x = rf.train.1, y = rf.label, importance = TRUE, ntree =2000)
 rf.1.pred = predict(rf.1, pima.test)
 
-rf.1
-
 cm = table(rf.1.pred,pima.test$type)
 sum(diag(cm))/sum(cm)
 confusionMatrix(rf.1.pred,pima.test$type)
 
-varImpPlot(rf.1)
+#varImpPlot(rf.1)
+```
+
+** Illustration of Decision Tree **
+```{r}
 
 
 library(party)
@@ -434,7 +425,7 @@ plot(x, type="simple")
 
 ##
 
-```{r,echo=FALSE}
+```{r,echo=FALSE,warning=FALSE}
 library(MASS)
 
 pima <-rbind(Pima.tr,Pima.te)
