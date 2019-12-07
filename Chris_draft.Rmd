@@ -436,11 +436,15 @@ plot(x, type="simple")
 **Question 2:**
 *Is there any interaction effect between the interested variables?*
 
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 pima.obj <- rfsrc(type~ npreg+glu+bp+skin+bmi+ped+age, data = pima, importance = TRUE)
 find.interaction(pima.obj, method = "vimp", nrep=3)
 find.interaction(pima.obj)
 ```
+
+Considering there is a high correlation between “npreg” and “age”, it does make sense that these two variables has the highest interaction. The interesting result is that the interaction between “ped” and “npreg” has the second highest interaction as expected because we were able to confirm that the interaction effect between “ped” and “npreg” contributes to a positive result in increasing accuracy in both K-fold and logistic regression methods. 
+
+
 
 **Question 3:**
 *Is there a relationship between blood pressure and pregnancy?*
@@ -457,7 +461,7 @@ pima.test <- pima[test.ind,]
 
 Comparison of logistic model with & without bp:
 
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
 summary(fit1)
 predicted <- ifelse(predict(fit1, newdata = pima.test, type = "response")<0.5, "No", "Yes")
@@ -477,7 +481,7 @@ list(cbind(sum(diag(confusion2))/sum(confusion2),
 
 
 ** K-Fold Cross Validation **
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 train.control= trainControl(method="repeatedcv",repeats=5)
 model <- train(type ~ ped*npreg + glu  + bmi + ped + age +npreg, data = pima, method = "glm",
                trControl = train.control)
@@ -496,7 +500,7 @@ plot.roc(g1.2, legacy.axes = TRUE )
 auc(g1.2)
 ```
 
-```{r,echo=FALSE}
+```{r,echo=FALSE,warning=FALSE}
 resid.plot <- function(m.dat){
   ggplot(m.dat , aes( predictor.value, resid.predictor ) ) +
   geom_point(size = 0.3) +
@@ -517,7 +521,7 @@ diag.dat <- function(m, type){
 }
 ```
 
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 
 partial_pearson <- function(fit)
 {
@@ -536,7 +540,7 @@ partial_pearson(fit2)
 **Question 4:**
 *How does pedigree effect pregnant women and diabetes?*
 
-```{r,echo=FALSE}
+```{r,echo=FALSE,warning=FALSE}
 fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
 
 summ <- summary(fit1)
@@ -551,7 +555,7 @@ CI
 **Question 5:**
 *Is there a relationship between diabetes and pregnancy?*
 
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 q5_1= glm(type ~ npreg , family = binomial(link = logit), data = pima.train)
 summary(q5_1)
 q5_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
@@ -561,6 +565,21 @@ summary(q5_3)
 ```
 
 Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. In descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant.
+
+## Overall Intepretation
+*Effect of Variables on odds of Diabetes in Pima Women*
+
+The interpretation of the variables included in the model will be understood as the effect of the variable on the odds (not log odds) of diabetes for female pima indian women.That is, for each unit increase in glucose, bmi, pedigree, and age the effects is an increase in odds of diabetes for Pima indian women. This effect is the exp() for each parameter coefficient, which can be seen in vector below. Since this is a random variable, a 95% confidence interval is provided below for effects. Given that interpretation is important, each variable will be explained at length. One unit increase in Glucose increases the odds of diabetes at by at least 3.1 percent and at most 5.5 percent. One unit increase in BMI increases the odds by at least 6.3 percent to at most 17 percent, hold all other variables constant. One unit increase in the pedigree function increases the odds by at least 2.44 times to at most 15 times as much, thus the most contributing variable in the model. Lastly, a one unit increase in age increased odd by at least 4.5 percent to at most 11 percent. This can also be interpreted in probability and not odds, as previously stated. That is, since the sign of all exponentiated variables are positive, as a single variable increases, holding all others constant, so to does the probability of diabetes in Pima indian women.
+
+*ROC and predictic*
+
+Next, consider the receiver operating characteristic (ROC). We turn the attention to the plot because of the drawbacks of the classification table. Classification, in our sense, classifies or predicts an observation based on the predicted value and a threshold. This being a predicted value that is a probability and a probability thresholdthreshold. If the predicted probability is above, say 0.5 (threshold), take that as evidence that subject has diabetes, say. Taking the findings for all observations can be summarized in a classification table. But a classification table is reduces results from its continuous probability form, to a binary form, so information is lost to summary, therefore a drawback. Moreover, classification is assessed by accuracy = P(correct classification) = sensitivity * P(y = 1) + specificity * (1 - P(y = 1)). Therefore accuracy depends on the relative number of times that y = 1 or y = 0, in our case, the number of subjects that have diabetes and those that don't, this being the second drawback. The ROC addresses these drawbacks. For the ROC curve, the threshold = 0 results in diabetes classification, therefore sensitivity = 1 and for threshold = 1 results in non diabetes, therefore sensitivity = 0  and 1 - specificity specificity  = 1. Referring to the graph, for any input of  threshold or any input of specificity, the corresponding sensitivity can be found. For some specificity value, Higherhigher sensitivity means greater predictive power,  thus greater area is greater predictive power. Our model suggest reaches an area of 0.906, near the max being 1. The area, known as concordance index, is the probability that predictions are Concordant with observations. 
+
+## Conclusion
+
+
+
+
 
 ### R Appendix
 ```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
