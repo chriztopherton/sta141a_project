@@ -57,9 +57,7 @@ trng = sample(1:532, 362, replace=FALSE)
 test.g<- setdiff(1:532,trng)
 
 Pim.tr<-Pim.N[trng,]
-Pim.te<-Pim.N[test.g,]
-
-head(Pim.tr)
+Pim.te<-Pim.N[test.g,]s
 
 #Standardize the varaibles being used
 pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
@@ -250,7 +248,7 @@ res.sv2<-cbind(sum(diag(svm.cm2))/sum(svm.cm2),
 svm.cm2[4]/sum(svm.cm2[,2]), #sensitivity
 svm.cm2[1]/sum(svm.cm2[,1])) #specificity
 
-colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity')
+colnames(res.sv2)<-c('Accuracy','Sensitivity','Specificity');res.sv2
 ```
 
 **Change Kernal**
