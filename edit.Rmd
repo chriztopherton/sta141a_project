@@ -135,7 +135,7 @@ Using Knn with all variables yields the following results which perform similarl
 ```{r,echo=FALSE}
 library(class)
 
-pm.knn12<-knn(pm.tr.sc[,-8],pm.ts.sc[,-8],pm.tr.sc[,8],k=16)
+pm.knn12<-knn(pm.tr.sc[,-8],pm.ts.sc[,-8],pm.tr.sc[,8],k=k.cv)
 (pm.kn.cm12<-table(pm.knn12,pm.ts.sc$Class))
 list(cbind(sum(diag(pm.kn.cm12)/sum(pm.kn.cm12)),
 pm.kn.cm12[4]/sum(pm.kn.cm12[,2]), #sensitivity
