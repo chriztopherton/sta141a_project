@@ -57,7 +57,7 @@ trng = sample(1:532, 362, replace=FALSE)
 test.g<- setdiff(1:532,trng)
 
 Pim.tr<-Pim.N[trng,]
-Pim.te<-Pim.N[test.g,]s
+Pim.te<-Pim.N[test.g,]
 
 #Standardize the varaibles being used
 pm.tr.sc<-data.frame(scale(Pim.tr[-8],center = TRUE,scale=TRUE))
