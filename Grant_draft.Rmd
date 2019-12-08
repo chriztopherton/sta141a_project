@@ -1,9 +1,10 @@
 ---
 title: "Sta141a Final Report"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 date: "12/9/2019"
+geometry: margin=2cm
 ---
 
 ```{r setup, include=FALSE,echo=TRUE}
@@ -375,7 +376,7 @@ colnames(res.rfoob)<-c('Accuracy','Sensitivity','Specificity');res.rfoob
 
 Assessment for splitted scaled testing set
 
-```{r}
+```{r,echo=FALSE,warning=FALSE}
 #cm for test
 (rf.cm <-table(s.pte[,8],pred))
 res.rft <-cbind(sum(diag(rf.cm))/sum(rf.cm),
@@ -438,7 +439,8 @@ For illustration of the process, we consider a single decision tree,produced fro
 ```{r,echo=FALSE,warning=FALSE}
 pima.obj <- rfsrc(type~ npreg+glu+bp+skin+bmi+ped+age, data = pima, importance = TRUE)
 find.interaction(pima.obj, method = "vimp", nrep=3)
-find.interaction(pima.obj)
+find <-find.interaction(pima.obj)
+
 ```
 
 Considering there is a high correlation between “npreg” and “age”, it does make sense that these two variables has the highest interaction. The interesting result is that the interaction between “ped” and “npreg” has the second highest interaction as expected because we were able to confirm that the interaction effect between “ped” and “npreg” contributes to a positive result in increasing accuracy in both K-fold and logistic regression methods. 
