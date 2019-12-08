@@ -32,7 +32,13 @@ library(party)
 
 
 ## Collaborators:
-  Grant Smith, Isaiah Valencia, Hun Lee, Christopher Ton
+  Grant Smith: EDA (normality), SVM,KNN,Discussion (Q1),Github
+  
+  Isaiah Valencia: EDA(linearity),Log Regr, Interpretation (Q3-6)
+  
+  Hun Lee: EDA(correlation),Log Regr,RF,Discussion (Q2,3-6)
+  
+  Christopher Ton: EDA(PCA),RF,Discussion(Q1,Q5), Github
 
 
 ## Overview of the problem
@@ -164,6 +170,7 @@ RF considers all predictors,fits 1000 bootstrapped decision trees and returns th
 
 (5) Logistic Regression
 
+Multiple logistic regression was used to mainly answer some of the questions about the variable's effect on diabetes and potential interactions. Summary results such as the  significance and AIC were assessed to determine how diabetes is predicted.
 
 (6) Unused Methods
 
