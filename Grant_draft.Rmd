@@ -511,6 +511,8 @@ plot.roc(g1.2, legacy.axes = TRUE )
 auc(g1.2)
 ```
 
+Please refer to below for interpretation on ROC plots.
+
 ```{r,echo=FALSE,warning=FALSE}
 resid.plot <- function(m.dat){
   ggplot(m.dat , aes( predictor.value, resid.predictor ) ) +
@@ -563,6 +565,7 @@ CI <- round(exp(confint(fit1,level = .95)),4)
 CI
 ```
 
+Please refer to below for intepretation on effects.
 
 
 **Question 5:**
@@ -581,13 +584,13 @@ list(s3$call,s3$aic)
 
 ```
 
-Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. In descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant. In terms of choosing which variable is better for prediction accuracy between “age” and “npreg”, we prefer age to pregnancy because not only does the model with “age”  give lower AIC, but also it tends to give higher prediction accuracy.
+Both predictors, age and npreg, two of the most correlated variables, may not be necessary for determining diabetes. For an instance we ran, in descending order of AIC values, 441.71,423.65, and 422.87, we see the (type~ npreg) performs worst compared (type~age) which is best. In the model that considers both predictors, npreg is deemed insignicant. In terms of choosing which variable is better for prediction accuracy between “age” and “npreg”, we prefer age to pregnancy because not only does the model with “age”  give lower AIC, but also it tends to give higher prediction accuracy.
 
 
-## Overall Intepretation and Discussions for Questions 3,4,5
+## Overall Intepretation and Discussions for Questions 4
 *Effect of Variables on odds of Diabetes in Pima Women*
 
-The interpretation of the variables included in the model will be understood as the effect of the variable on the odds (not log odds) of diabetes for female pima indian women.That is, for each unit increase in glucose, bmi, pedigree, and age the effects is an increase in odds of diabetes for Pima indian women. This effect is the exp() for each parameter coefficient, which can be seen in vector below. Since this is a random variable, a 95% confidence interval is provided below for effects. Given that interpretation is important, each variable will be explained at length. One unit increase in Glucose increases the odds of diabetes at by at least 3.1 percent and at most 5.5 percent. One unit increase in BMI increases the odds by at least 6.3 percent to at most 17 percent, hold all other variables constant. One unit increase in the pedigree function increases the odds by at least 2.44 times to at most 15 times as much, thus the most contributing variable in the model. Lastly, a one unit increase in age increased odd by at least 4.5 percent to at most 11 percent. This can also be interpreted in probability and not odds, as previously stated. That is, since the sign of all exponentiated variables are positive, as a single variable increases, holding all others constant, so to does the probability of diabetes in Pima indian women.
+The interpretation of the variables included in the model will be understood as the effect of the variable on the odds (not log odds) of diabetes for female pima indian women.That is, for each unit increase in glucose, bmi, pedigree, and age the effects is an increase in odds of diabetes for Pima indian women. This effect is the exp() for each parameter coefficient, which can be seen. Since this is a random variable, a 95% confidence interval is provided below for effects. Given that interpretation is important, each variable will be explained at length. One unit increase in Glucose increases the odds of diabetes at by at least 3.1 percent and at most 5.5 percent. One unit increase in BMI increases the odds by at least 6.3 percent to at most 17 percent, hold all other variables constant. One unit increase in the pedigree function increases the odds by at least 2.44 times to at most 15 times as much, thus the most contributing variable in the model. Lastly, a one unit increase in age increased odd by at least 4.5 percent to at most 11 percent. This can also be interpreted in probability and not odds, as previously stated. That is, since the sign of all exponentiated variables are positive, as a single variable increases, holding all others constant, so to does the probability of diabetes in Pima indian women.
 
 *ROC and predictic*
 
