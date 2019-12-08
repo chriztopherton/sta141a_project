@@ -411,8 +411,10 @@ rf.1 = randomForest(x = rf.train.1, y = rf.label, importance = TRUE, ntree =2000
 rf.1.pred = predict(rf.1, pima.test)
 
 cm = table(rf.1.pred,pima.test$type)
+cm
 sum(diag(cm))/sum(cm)
-confusionMatrix(rf.1.pred,pima.test$type)
+#cm_rfo <- confusionMatrix(rf.1.pred,pima.test$type)
+#cm_rfo$table
 
 #varImpPlot(rf.1)
 ```
@@ -421,7 +423,7 @@ Small improvement in prediction may not be significant enough to support the exc
 
 ** Illustration of Decision Tree **
 
-```{r,echo=FALSE,warning=FALSE,,fig.height=5,fig.width=5}
+```{r,echo=FALSE,warning=FALSE,,fig.height=3,fig.width=3}
 #library(party)
 x <- ctree(type ~ glu  + bmi + ped + age + npreg  , data=pima.train)
 plot(x, type="simple")
@@ -459,7 +461,8 @@ Comparison of logistic model with & without bp:
 
 ```{r,echo=FALSE,warning=FALSE}
 fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
-summary(fit1)
+#summary(fit1)
+fit1$call
 predicted <- ifelse(predict(fit1, newdata = pima.test, type = "response")<0.5, "No", "Yes")
 (confusion <- table(predicted, factor(pima.test$type), dnn = c("Predicted type", "True type")))
 list(cbind(sum(diag(confusion))/sum(confusion),
@@ -467,7 +470,8 @@ list(cbind(sum(diag(confusion))/sum(confusion),
            confusion[1]/sum(confusion[,1])))#specificity
 
 fit2 = glm(type ~ glu  + bmi + ped + age + bp , family = binomial(link = logit), data = pima.train)
-summary(fit2)
+#summary(fit2)
+fit2$call
 predicted2 <- ifelse(predict(fit2, newdata = pima.test, type = "response")<0.5, "No", "Yes")
 (confusion2 <- table(predicted2, factor(pima.test$type), dnn = c("Predicted type", "True type")))
 list(cbind(sum(diag(confusion2))/sum(confusion2),
@@ -490,8 +494,8 @@ When we conducted the likelihood-ratio test for the goodness of fit of two model
 train.control= trainControl(method="repeatedcv",repeats=5)
 model <- train(type ~ ped*npreg + glu  + bmi + ped + age +npreg, data = pima, method = "glm",
                trControl = train.control)
-print(model)
-
+#print(model)
+par(mfrow=c(2,1))
 g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
 
 g1.1 <- roc(type ~predict(fit1,newdata=pima.test,type='response'), data = pima.test)
@@ -536,7 +540,7 @@ partial_pearson <- function(fit)
   res<- residuals(fit, "pearson")
   print(summary(res))
 }
-
+par(mfrow=c(2,1))
 partial_pearson(fit1)
 partial_pearson(fit2)
 
@@ -550,7 +554,7 @@ partial_pearson(fit2)
 fit1 = glm(type ~ glu  + bmi + ped + age , family = binomial(link = logit), data = pima.train)
 
 summ <- summary(fit1)
-summ
+summ$call
 coeff<-data.frame(summ$coefficients)
 (odds.inc <- round(exp(coeff$Estimate), 4) )
 CI <- round(exp(confint(fit1,level = .95)),4)
@@ -564,13 +568,14 @@ CI
 
 ```{r,echo=FALSE,warning=FALSE}
 q5_1= glm(type ~ npreg , family = binomial(link = logit), data = pima.train)
-summary(q5_1)
+s1 <-summary(q5_1)
+list(s1$call,s1$aic)
 q5_2 = glm(type ~ age, family = binomial(link = logit), data = pima.train)
-summary(q5_2)
+s2 <-summary(q5_2)
+list(s2$call,s2$aic)
 q5_3 = glm(type ~npreg+age, family = binomial(link = logit), data = pima.train)
-summary(q5_3)
-
-anova(q5_1,q5_2,q5_3,test="LRT")
+s3 <-summary(q5_3)
+list(s3$call,s3$aic)
 
 ```
 
