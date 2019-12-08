@@ -492,7 +492,7 @@ anova(fit1,fit2,test="LRT")
 When we conducted the likelihood-ratio test for the goodness of fit of two models based on the ratio of their likelihoods under the null hypothesis: the first model = the first model with “bp”, we were not able to significant evidence to reject the Ho and hence we concluded the variable “bp” is not needed for the diabetes prediction model.
 
 **K-Fold Cross Validation**
-```{r,echo=FALSE,warning=FALSE}
+```{r,echo=FALSE,warning=FALSE,,out.width=c('50%','50%'),fig.show='hold'}
 train.control= trainControl(method="repeatedcv",repeats=5)
 model <- train(type ~ ped*npreg + glu  + bmi + ped + age +npreg, data = pima, method = "glm",
                trControl = train.control)
@@ -534,7 +534,7 @@ diag.dat <- function(m, type){
 }
 ```
 
-```{r,echo=FALSE,warning=FALSE}
+```{r,echo=FALSE,warning=FALSE,out.width=c('50%','50%'),fig.show='hold'}
 
 partial_pearson <- function(fit)
 {
@@ -544,7 +544,7 @@ partial_pearson <- function(fit)
   res<- residuals(fit, "pearson")
   print(summary(res))
 }
-par(mfrow=c(2,1))
+par(mfrow=c(1,2))
 partial_pearson(fit1)
 partial_pearson(fit2)
 
